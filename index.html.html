@@ -1,0 +1,2675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Invoice Generator (Portfolio Demo)</title>
+<style>
+  :root{
+    --navy:#1B2A6B;
+    --navy-deep:#131F52;
+    --grey-bg:#F4F5F7;
+    --panel:#FFFFFF;
+    --ink:#1F2430;
+    --ink-soft:#68707E;
+    --rule:#D9DCE3;
+    --link:#2451C7;
+    --body: Arial, Helvetica, "Segoe UI", sans-serif;
+    --mono: "Courier New", ui-monospace, monospace;
+  }
+  *{ box-sizing: border-box; }
+  .invoice, .invoice *{
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    color-adjust: exact;
+  }
+  body{
+    margin:0;
+    background: var(--grey-bg);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .app{
+    display:grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+    max-width: 1220px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  @media (max-width: 900px){ .app{ grid-template-columns: 1fr; } }
+
+  h1{ font-size: 20px; font-weight: 700; margin: 0 0 4px; color: var(--navy); }
+  .tagline{ color: var(--ink-soft); font-size: 12.5px; margin: 0 0 22px; }
+
+  .panel{
+    background: var(--panel);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .panel h2{
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--ink-soft); margin: 0 0 14px; font-weight: 700;
+    display:flex; justify-content:space-between; align-items:center;
+  }
+  label{ display:block; font-size: 12px; color: var(--ink-soft); margin: 10px 0 4px; }
+  label:first-child{ margin-top:0; }
+  input, select, textarea{
+    width: 100%; padding: 8px 10px; border: 1px solid var(--rule);
+    border-radius: 5px; font-family: var(--body); font-size: 13.5px;
+    background: var(--grey-bg); color: var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{ outline:none; border-color: var(--navy); background: var(--panel); }
+  textarea{ resize: vertical; min-height: 44px; }
+  .row2{ display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:6px;
+    padding: 8px 14px; border-radius: 5px; border: 1px solid var(--rule);
+    background: var(--panel); color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .btn:hover{ border-color: var(--navy); }
+  .btn-primary{ background: var(--navy); border-color: var(--navy); color: white; }
+  .btn-primary:hover{ background: var(--navy-deep); }
+  .btn-text{ border:none; background:none; color: var(--link); padding: 4px 6px; font-size: 12px; text-decoration: underline; cursor:pointer; }
+  .btn-block{ width:100%; margin-top: 10px; }
+  .btn-sm{ padding: 4px 9px; font-size: 11.5px; }
+
+  .client-row{ display:flex; gap:8px; }
+  .client-row select{ flex:1; }
+  .new-client-form{ margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--rule); }
+  .hidden{ display:none !important; }
+  .chat-bubble-bot{ background:#fff; border:1px solid var(--rule); border-radius:10px; padding:10px 12px; margin-bottom:10px; font-size:13.5px; line-height:1.5; }
+  .chat-options{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+  .chat-option-btn{ padding:7px 14px; border-radius:20px; border:1px solid var(--navy); background:#fff; color:var(--navy); font-size:13px; cursor:pointer; font-family:var(--body); }
+  .chat-option-btn:hover{ background:var(--navy); color:#fff; }
+  .chat-step input[type="month"], .chat-step input[type="number"]{ width:100%; margin-bottom:0; }
+  .checkbox-line{ display:flex; align-items:center; gap:6px; margin-top:10px; font-size:12.5px; color:var(--ink-soft); }
+  .checkbox-line input{ width:auto; }
+
+  .item-row{ display:grid; grid-template-columns: 1fr 56px 66px 24px; gap: 6px; align-items:center; margin-bottom: 6px; }
+  .item-row input{ padding: 6px 8px; font-size: 13px; }
+  .item-row .remove{ background:none; border:none; color: var(--ink-soft); cursor:pointer; font-size: 16px; line-height:1; padding:0; }
+  .item-row .remove:hover{ color: #B3453D; }
+  .item-head{ display:grid; grid-template-columns: 1fr 56px 66px 24px; gap:6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); margin-bottom: 6px; }
+
+  .status-line{ font-size: 12px; color: var(--ink-soft); margin-top: 8px; }
+
+  /* ---- history ---- */
+  .hist-list{ display:flex; flex-direction:column; gap:8px; max-height: 340px; overflow-y:auto; }
+  .hist-row{ border:1px solid var(--rule); border-radius:6px; padding:8px 10px; font-size:12px; }
+  .hist-row .top{ display:flex; justify-content:space-between; font-weight:700; color:var(--navy); }
+  .hist-row .desc{ color: var(--ink-soft); margin-top:3px; }
+  .hist-row .bottom{ display:flex; justify-content:space-between; align-items:center; margin-top:6px; }
+  .hist-row .amt{ font-family: var(--mono); font-weight:700; }
+  .hist-actions{ display:flex; gap:6px; }
+  .empty-hist{ font-size:12.5px; color:var(--ink-soft); text-align:center; padding: 14px 0; }
+
+  /* ---------- Invoice preview ---------- */
+  .preview-wrap{ position: sticky; top: 20px; align-self: start; }
+  .invoice{ background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 40px 44px; }
+
+  .inv-header{ display:flex; justify-content: space-between; align-items:flex-start; margin-bottom: 18px; }
+  .inv-logo-name{ font-size: 24px; font-weight: 800; color: var(--navy); }
+  .inv-logo-img{ max-height: 92px; max-width: 340px; display:block; object-fit: contain; }
+  .inv-logo-img.size-small{ max-height: 56px; max-width: 220px; }
+  .inv-logo-img.size-large{ max-height: 130px; max-width: 420px; }
+  .inv-title{ font-size: 22px; font-weight: 800; color: var(--navy); text-align:right; }
+
+  table.meta-table{ border-collapse: collapse; margin-left:auto; margin-top: 6px; }
+  table.meta-table td{ border: 1px solid var(--rule); padding: 5px 10px; font-size: 12.5px; }
+  table.meta-table td.k{ color: var(--ink-soft); white-space:nowrap; }
+  table.meta-table td.v{ font-weight: 600; }
+
+  .bill-ship{ display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 20px 0 18px; }
+  .bs-head{ background: var(--navy); color:white; font-size: 11.5px; font-weight:700; padding: 5px 10px; }
+  .bs-body{ border: 1px solid var(--rule); border-top:none; padding: 8px 10px; font-size: 12.5px; min-height: 54px; }
+  .bs-body .name{ font-weight: 700; }
+  .bs-body .addr{ color: var(--ink); white-space: pre-line; margin-top:2px; }
+
+  table.ledger{ width:100%; border-collapse: collapse; margin-top: 4px; }
+  table.ledger thead th{
+    background: var(--navy); color: white; text-align:left; font-size: 11.5px;
+    font-weight:700; padding: 7px 10px; border: 1px solid var(--navy);
+  }
+  table.ledger thead th.num{ text-align:right; }
+  table.ledger tbody td{ padding: 8px 10px; border: 1px solid var(--rule); font-size: 12.5px; vertical-align: top; }
+  table.ledger tbody td.num{ text-align:right; font-family: var(--mono); }
+  table.ledger tfoot td{ border: 1px solid var(--rule); padding: 8px 10px; font-weight:700; font-size:13px; }
+  table.ledger tfoot td.label{ text-align:right; }
+  table.ledger tfoot td.amt{ text-align:right; font-family: var(--mono); text-decoration: underline; }
+
+  .pay-block{ text-align:center; margin-top: 22px; font-size: 12.5px; color: var(--link); }
+  .pay-block .thanks{ color: var(--ink); font-weight:700; margin-top: 6px; }
+
+  .contact-line{ text-align:center; margin-top: 14px; font-size: 12px; color: var(--ink); }
+  .inv-footer{ margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--rule); text-align:center; font-size: 11.5px; color: var(--ink-soft); }
+
+  .empty-state{ color: var(--ink-soft); font-size: 13px; text-align:center; padding: 30px 20px; }
+  .preview-actions{ display:flex; gap: 8px; margin-top: 14px; justify-content: flex-end; }
+
+  @media print{
+    body{ background: white; }
+    .panel, .preview-actions, h1, .tagline{ display:none !important; }
+    .app{ grid-template-columns: 1fr; padding:0; max-width:none; }
+    .invoice{ border:none; border-radius:0; padding: 10px; }
+    .preview-wrap{ position: static; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="controls">
+    <h1>Invoice Generator</h1>
+    <p class="tagline">Hours × rate invoicing, per client — demo build.</p>
+    <p class="tagline" id="sync-status-indicator" style="margin-top:-14px;"></p>
+
+    <div class="panel" id="guided-panel" style="border:2px solid var(--navy); background:#F0F4FF;">
+      <h2 style="color:var(--navy);">💬 New here? Get guided</h2>
+      <p class="status-line" style="margin:0 0 12px;">Answer a few quick questions and I'll set up the invoice for you — no need to learn every panel.</p>
+      <button class="btn btn-primary btn-block" id="start-guided-btn">Start guided invoice</button>
+
+      <div id="guided-chat" class="hidden" style="margin-top:14px;">
+        <div class="chat-step" id="guided-step-client">
+          <div class="chat-bubble-bot">Which client is this invoice for?</div>
+          <div class="chat-options" id="guided-client-options"></div>
+          <button type="button" class="chat-option-btn" id="guided-new-client-toggle" style="border-style:dashed;">+ Add new client</button>
+
+          <div class="hidden" id="guided-new-client-form" style="margin-top:10px;">
+            <label>Client / company name</label>
+            <input id="guided-nc-name" placeholder="e.g. Acme Corp">
+            <label>Bill To address</label>
+            <textarea id="guided-nc-address" placeholder="Street, Suite, City, State ZIP"></textarea>
+            <label>Client email (optional, for the Email button)</label>
+            <input id="guided-nc-email" placeholder="client@company.com">
+            <button class="btn btn-primary btn-block" id="guided-nc-save" style="margin-top:8px;">Save &amp; continue</button>
+          </div>
+        </div>
+
+        <div class="chat-step hidden" id="guided-step-name">
+          <div class="chat-bubble-bot">Which resource would you like to invoice?</div>
+          <div class="chat-options" id="guided-name-options"></div>
+          <div style="display:flex; gap:8px;">
+            <input id="guided-name-input" placeholder="Or type a name…" style="flex:1;">
+            <button class="btn" id="guided-name-next">Next</button>
+          </div>
+        </div>
+
+        <div class="chat-step hidden" id="guided-step-month">
+          <div class="chat-bubble-bot">Which month is this invoice for?</div>
+          <input type="month" id="guided-month-input">
+          <button class="btn btn-primary btn-block" id="guided-month-next" style="margin-top:8px;">Next</button>
+        </div>
+
+        <div class="chat-step hidden" id="guided-step-hours">
+          <div class="chat-bubble-bot">How many hours did they work?</div>
+          <input type="number" id="guided-hours-input" placeholder="e.g. 160" min="0" step="0.25">
+          <button class="btn btn-primary btn-block" id="guided-hours-next" style="margin-top:8px;">Next</button>
+        </div>
+
+        <div class="chat-step hidden" id="guided-step-confirm">
+          <div class="chat-bubble-bot" id="guided-confirm-text"></div>
+          <button class="btn btn-primary btn-block" id="guided-confirm-btn">Add to invoice</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Your business</h2>
+      <label>Business name (used if no logo image)</label>
+      <input id="biz-name" placeholder="e.g. Your Company Inc">
+      <label>Logo image (shown top-left on invoice)</label>
+      <input type="file" id="biz-logo-upload" accept="image/*">
+      <div id="logo-preview-row" class="hidden" style="margin-top:8px; display:flex; align-items:center; gap:10px;">
+        <img id="logo-preview-img" style="max-height:40px; max-width:160px; object-fit:contain;">
+        <button class="btn-text" id="remove-logo" style="color:#B3453D;">Remove logo</button>
+      </div>
+      <label>Logo size on invoice</label>
+      <select id="logo-size">
+        <option value="size-small">Small</option>
+        <option value="" selected>Medium (default)</option>
+        <option value="size-large">Large</option>
+      </select>
+      <label>Business address (footer)</label>
+      <textarea id="biz-address" placeholder="Street, Suite, City, State ZIP"></textarea>
+      <div class="row2">
+        <div>
+          <label>Contact email</label>
+          <input id="biz-email" placeholder="acctreceivable@company.com">
+        </div>
+        <div>
+          <label>Website</label>
+          <input id="biz-web" placeholder="www.company.com">
+        </div>
+      </div>
+      <label>Bank details (for payment block) — wrap text in ** to bold it, e.g. Bank: **Sample Bank**</label>
+      <textarea id="biz-bank" placeholder="Bank Account Number: **123456789**&#10;Routing Number ACH: **987654321**&#10;Bank: **Sample Bank**"></textarea>
+      <div class="checkbox-line">
+        <input type="checkbox" id="bank-show" checked>
+        <label style="margin:0;" for="bank-show">Show bank details on invoice</label>
+      </div>
+      <button class="btn btn-block" id="save-biz">Save business info</button>
+    </div>
+
+    <div class="panel">
+      <h2>Client</h2>
+      <div class="client-row">
+        <select id="client-select"><option value="">Select a client…</option></select>
+        <button class="btn" id="edit-client-btn" title="Edit selected client">Edit</button>
+        <button class="btn" id="delete-client-btn" title="Delete selected client" style="color:#B3453D;">Delete</button>
+      </div>
+      <button class="btn-text" id="new-client-toggle">+ Add new client</button>
+      <div class="new-client-form hidden" id="new-client-form">
+        <label>Client / company name</label>
+        <input id="nc-name" placeholder="e.g. Acme Corp">
+        <label>Bill To address</label>
+        <textarea id="nc-address" placeholder="Street, Suite, City, State ZIP"></textarea>
+        <label>Client email (for the Email button)</label>
+        <input id="nc-email" placeholder="client@company.com">
+        <label>CC email(s) for this client (optional, comma-separated)</label>
+        <input id="nc-cc" placeholder="e.g. ap-team@client.com">
+        <button class="btn btn-primary btn-block" id="nc-save">Save client</button>
+      </div>
+      <div class="checkbox-line">
+        <input type="checkbox" id="ship-same" checked>
+        <label style="margin:0;" for="ship-same">Ship To same as Bill To</label>
+      </div>
+      <div id="ship-to-form" class="hidden">
+        <label>Ship To address</label>
+        <textarea id="ship-address" placeholder="Leave blank to reuse client name/address"></textarea>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Invoice details</h2>
+      <div class="row2">
+        <div>
+          <label>Invoice #</label>
+          <input id="inv-number">
+          <div class="checkbox-line">
+            <input type="checkbox" id="inv-number-manual">
+            <label style="margin:0;" for="inv-number-manual">Keep this exact number (don't auto-update it)</label>
+          </div>
+        </div>
+        <div>
+          <label>Currency</label>
+          <select id="inv-currency">
+            <option value="$">USD ($)</option>
+            <option value="₹">INR (₹)</option>
+            <option value="€">EUR (€)</option>
+            <option value="£">GBP (£)</option>
+          </select>
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>Invoice date</label>
+          <input type="date" id="inv-issue">
+        </div>
+        <div>
+          <label>Payment due date</label>
+          <input type="date" id="inv-due">
+        </div>
+      </div>
+      <label>Invoice month (optional — sets the period, and updates the invoice # if it ends in YYMM)</label>
+      <input type="month" id="inv-month-picker">
+      <div class="status-line" id="inv-month-hint"></div>
+      <div class="row2">
+        <div>
+          <label>Invoice period — from</label>
+          <input type="date" id="inv-period-start">
+        </div>
+        <div>
+          <label>Invoice period — to</label>
+          <input type="date" id="inv-period-end">
+        </div>
+      </div>
+      <div class="row2">
+        <div>
+          <label>PO / reference # (optional)</label>
+          <input id="inv-po" placeholder="e.g. PO-4471">
+        </div>
+        <div>
+          <label>Total row label</label>
+          <input id="inv-total-label" value="BALANCE DUE">
+        </div>
+      </div>
+      <label>Payment terms (optional)</label>
+      <input id="inv-terms" placeholder="e.g. Net 30">
+      <div class="checkbox-line">
+        <input type="checkbox" id="terms-show" checked>
+        <label style="margin:0;" for="terms-show">Show terms on invoice</label>
+      </div>
+      <div class="status-line" id="terms-hint"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Import from previous invoice</h2>
+      <p class="status-line" style="margin:0 0 10px;">Attach a PDF of a past invoice generated by this tool. I'll try to pull out the client's Bill To / Ship To details and each employee's rate.</p>
+      <label>Attach invoice PDF</label>
+      <input type="file" id="invoice-pdf-input" accept=".pdf,application/pdf">
+      <div class="status-line" id="invoice-pdf-status"></div>
+      <div id="invoice-pdf-preview"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Employee rates</h2>
+      <p class="status-line" style="margin:0 0 10px;">Saved rates are matched by name when you parse a timesheet below.</p>
+      <div class="client-row">
+        <input id="emp-name-input" placeholder="Employee name">
+        <input id="emp-rate-input" type="number" min="0" step="0.01" placeholder="Rate/hr" style="max-width:90px;">
+      </div>
+      <button class="btn btn-block" id="emp-add-btn">Add / update rate</button>
+      <div id="employee-list" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Resource invoice tracker</h2>
+      <p class="status-line" style="margin:0 0 10px;">Tracks which months have been invoiced per resource, from every invoice you generate or import here.</p>
+      <div class="row2">
+        <div>
+          <label>Filter by employee</label>
+          <select id="tracker-filter-employee"><option value="">Choose employee…</option></select>
+        </div>
+        <div>
+          <label>Filter by month</label>
+          <select id="tracker-filter-month"><option value="">Choose month…</option></select>
+        </div>
+      </div>
+      <div id="resource-tracker-list" style="margin-top:10px;"></div>
+
+      <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--rule);">
+        <label>Show pending invoices for</label>
+        <input type="month" id="pending-check-month">
+        <div id="pending-list" style="margin-top:10px;"></div>
+      </div>
+
+      <div style="margin-top:18px; padding-top:14px; border-top:1px solid var(--rule);">
+        <label>Manually mark a resource covered for a month</label>
+        <p class="status-line" style="margin:0 0 8px;">Use this when an invoice's own period field is wrong or missing (e.g. it says June but was actually for July) — this overrides what's tracked, independent of what any PDF says.</p>
+        <input id="manual-cover-name" list="manual-cover-name-list" placeholder="Employee name">
+        <datalist id="manual-cover-name-list"></datalist>
+        <div class="row2" style="margin-top:8px;">
+          <input type="month" id="manual-cover-month">
+          <button class="btn" id="manual-cover-btn">Mark as covered</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Paste email / timesheet</h2>
+      <p class="status-line" style="margin:0 0 10px;">Paste the text of an email or timesheet, or attach a saved email file. I'll try to pull out each person's name and hours worked.</p>
+      <label>Attach email file (.eml, .msg, or .txt)</label>
+      <input type="file" id="email-file-input" accept=".eml,.msg,.txt,message/rfc822,text/plain">
+      <div class="status-line" id="email-file-status"></div>
+      <label style="margin-top:12px;">Or paste text directly</label>
+      <textarea id="timesheet-input" placeholder="e.g.&#10;John Doe: 160 hours&#10;Jane Smith - 152 hrs" style="min-height:110px;"></textarea>
+      <button class="btn btn-primary btn-block" id="parse-timesheet-btn">Parse hours &amp; names</button>
+      <div id="parse-preview"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Hours &amp; rate</h2>
+      <div class="item-head"><span>Description</span><span>Rate/Hr</span><span>Hours</span><span></span></div>
+      <div id="items-container"></div>
+      <datalist id="saved-descriptions-list"></datalist>
+      <button class="btn-text" id="add-item">+ Add line item</button>
+      <div class="status-line" id="save-status"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Payment note</h2>
+      <textarea id="inv-notes" placeholder="e.g. Please include the **Invoice Number** on all payments."></textarea>
+    </div>
+
+    <div class="panel">
+      <h2>Invoice history <button class="btn-text" id="clear-history" style="text-decoration:underline;">clear all</button></h2>
+      <div class="hist-list" id="hist-list"></div>
+    </div>
+  </div>
+
+  <div class="preview-wrap">
+    <div class="invoice" id="invoice-preview"></div>
+    <div class="preview-actions">
+      <button class="btn" id="email-btn">Email invoice</button>
+      <button class="btn" id="copy-formatted-email-btn">Copy formatted email</button>
+      <button class="btn" id="save-record-btn">Save to history</button>
+      <button class="btn btn-primary" id="print-btn">Save &amp; Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const DEFAULT_LOGO_DATAURL = '';
+  const $ = id => document.getElementById(id);
+  let clients = [];
+  let invoicesHistory = [];
+  let selectedClientId = null;
+  let invoicePrefixClientMap = {};
+  let clientResourceMap = {}; // { clientId: [resourceName, ...] }
+  let items = [];
+  let itemSeq = 0;
+  let bizLogoDataUrl = null;
+  let employees = [];
+  let parsedRows = [];
+  let resourceCoverage = {}; // { employeeName: ['2026-01','2026-02', ...] }
+
+  function newItemId(){ return 'it' + (++itemSeq); }
+  function fmtMoney(cur, n){
+    const v = isFinite(n) ? n : 0;
+    return cur + v.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function fmtDate(d){
+    if(!d) return '—';
+    const dt = new Date(d + 'T00:00:00');
+    return dt.toLocaleDateString('en-US', {month:'long', day:'numeric', year:'numeric'});
+  }
+  function fmtDateShort(d){
+    if(!d) return '';
+    const dt = new Date(d + 'T00:00:00');
+    const mm = String(dt.getMonth()+1).padStart(2,'0');
+    const dd = String(dt.getDate()).padStart(2,'0');
+    return `${mm}-${dd}-${dt.getFullYear()}`;
+  }
+  function todayISO(){ return new Date().toISOString().slice(0,10); }
+  function plusDays(dateStr, days){ const d = new Date(dateStr); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); }
+
+  function parseNetDays(str){
+    const m = (str||'').match(/(\d+)/);
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function recalcDueFromTerms(){
+    const days = parseNetDays($('inv-terms').value);
+    const issue = $('inv-issue').value;
+    const hint = $('terms-hint');
+    if(days !== null && issue){
+      $('inv-due').value = plusDays(issue, days);
+      hint.textContent = `Due date auto-set to ${fmtDate($('inv-due').value)} from these terms.`;
+    } else {
+      hint.textContent = '';
+    }
+  }
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function boldMarkup(s){
+    // Escapes HTML first, then turns **text** into <strong>text</strong>
+    return escapeHtml(s).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  // NOTE (portfolio/demo build): the original tool syncs through a private
+  // Firebase Realtime Database. That live database and its credentials have
+  // been removed here — this demo build runs on local storage only, so data
+  // stays on this one device/browser and nothing is sent anywhere.
+  const FIREBASE_ENABLED = false;
+  const FIREBASE_BASE = '';
+  const FIREBASE_PATH = '';
+  const LS_PREFIX = 'invgen-demo:';
+  const hasCloudStorage = false; // portfolio demo: always use plain browser localStorage
+  let firebaseOnline = true;
+
+  async function firebaseGet(key){
+    if(!FIREBASE_ENABLED) return { ok:false };
+    try{
+      const res = await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}/${encodeURIComponent(key)}.json`);
+      if(!res.ok) return { ok:false };
+      return { ok:true, value: await res.json() };
+    } catch(e){ return { ok:false }; }
+  }
+  async function firebaseSet(key, value){
+    if(!FIREBASE_ENABLED) return false;
+    try{
+      const res = await fetch(`${FIREBASE_BASE}/${FIREBASE_PATH}/${encodeURIComponent(key)}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(value)
+      });
+      return res.ok;
+    } catch(e){ return false; }
+  }
+  async function localGet(key){
+    try{
+      if(hasCloudStorage){
+        const r = await window.storage.get(key, false);
+        return r ? JSON.parse(r.value) : null;
+      }
+      const raw = localStorage.getItem(LS_PREFIX + key);
+      return raw !== null ? JSON.parse(raw) : null;
+    } catch(e){ return null; }
+  }
+  async function localSet(key, value){
+    try{
+      if(hasCloudStorage){ await window.storage.set(key, JSON.stringify(value), false); }
+      else{ localStorage.setItem(LS_PREFIX + key, JSON.stringify(value)); }
+    } catch(e){ console.error('local storage set failed', key, e); }
+  }
+
+  async function storageGet(key){
+    const remote = await firebaseGet(key);
+    if(remote.ok){
+      firebaseOnline = true;
+      await localSet(key, remote.value); // keep local cache warm for offline use
+      return remote.value;
+    }
+    firebaseOnline = false;
+    updateSyncStatusUI();
+    return await localGet(key);
+  }
+  async function storageSet(key, value){
+    await localSet(key, value); // fast, offline-safe
+    const ok = await firebaseSet(key, value); // sync to cloud
+    firebaseOnline = ok;
+    updateSyncStatusUI();
+  }
+  function updateSyncStatusUI(){
+    const el = document.getElementById('sync-status-indicator');
+    if(!el) return;
+    if(!FIREBASE_ENABLED){
+      el.textContent = 'Demo mode — data saved to this browser only (the full version syncs across devices via a private database).';
+      el.style.color = 'var(--ink-soft)';
+      return;
+    }
+    el.textContent = firebaseOnline ? '☁ Synced across devices' : '⚠ Offline — changes saved on this device only, will sync when reconnected';
+    el.style.color = firebaseOnline ? 'var(--ink-soft)' : '#B3453D';
+  }
+
+  const DEFAULT_BIZ = {
+    name: 'Acme Consulting LLC',
+    address: '123 Demo Street, Suite 100, Springfield, ST 00000',
+    email: 'billing@acmeconsulting.example',
+    web: 'www.acmeconsulting.example',
+    bank: 'Bank Account Number: **000000000**\nRouting Number ACH: **000000000**\nBank: **Sample Bank**'
+  };
+
+  async function init(){
+    let biz = await storageGet('business-profile');
+    if(biz === null){
+      biz = DEFAULT_BIZ;
+      await storageSet('business-profile', biz);
+    }
+    $('biz-name').value = biz.name || '';
+    $('biz-address').value = biz.address || '';
+    $('biz-email').value = biz.email || '';
+    $('biz-web').value = biz.web || '';
+    $('biz-bank').value = biz.bank || '';
+
+    const storedLogo = await storageGet('business-logo');
+    if(storedLogo === null){
+      bizLogoDataUrl = DEFAULT_LOGO_DATAURL;
+      await storageSet('business-logo', bizLogoDataUrl);
+    } else {
+      bizLogoDataUrl = storedLogo;
+    }
+    updateLogoPreviewUI();
+
+    clients = (await storageGet('clients')) || [];
+    renderClientOptions();
+
+    invoicesHistory = (await storageGet('invoices')) || [];
+    renderHistory();
+
+    savedDescriptions = (await storageGet('saved-descriptions')) || [];
+    renderDescriptionList();
+
+    employees = (await storageGet('employee-rates')) || [];
+    renderEmployeeList();
+
+    resourceCoverage = (await storageGet('resource-coverage')) || {};
+    renderResourceTracker();
+
+    invoicePrefixClientMap = (await storageGet('invoice-prefix-client-map')) || {};
+    clientResourceMap = (await storageGet('client-resource-map')) || {};
+
+    const mergedCount = await mergeDuplicateClients();
+    if(mergedCount > 0){
+      renderClientOptions();
+      flashStatus(`Cleaned up ${mergedCount} duplicate client record${mergedCount>1?'s':''} (e.g. "Inc" vs no-suffix name variants) and merged their invoice history.`);
+    }
+
+    const backfilled = await backfillClientResourceMap();
+    if(backfilled && mergedCount === 0){
+      flashStatus('Filled in client-resource history from your existing invoices.');
+    }
+
+    const counter = await storageGet('invoice-counter');
+    const nextNum = (counter && counter.n ? counter.n : 0) + 1;
+    $('inv-number').value = 'INV-' + String(nextNum).padStart(4,'0');
+
+    $('inv-issue').value = todayISO();
+    $('inv-due').value = plusDays(todayISO(), 30);
+    $('inv-period-start').value = todayISO();
+    $('inv-period-end').value = todayISO();
+
+    addItem();
+    bindEvents();
+    renderPreview();
+  }
+
+  function renderClientOptions(){
+    const sel = $('client-select');
+    sel.innerHTML = '<option value="">Select a client…</option>' +
+      clients.map(c => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    if(selectedClientId) sel.value = selectedClientId;
+  }
+
+  function updateLogoPreviewUI(){
+    const row = $('logo-preview-row');
+    const img = $('logo-preview-img');
+    if(bizLogoDataUrl){
+      img.src = bizLogoDataUrl;
+      row.classList.remove('hidden');
+    } else {
+      row.classList.add('hidden');
+    }
+  }
+
+  function addItem(){ const id = newItemId(); items.push({id, desc:'', rate:'', hours:''}); renderItems(); }
+  function removeItem(id){ items = items.filter(i => i.id !== id); if(items.length===0) addItem(); renderItems(); renderPreview(); }
+  function renderItems(){
+    const c = $('items-container');
+    c.innerHTML = items.map(i => `
+      <div class="item-row" data-id="${i.id}">
+        <input class="f-desc" list="saved-descriptions-list" placeholder="e.g. Consulting services for J. Doe" value="${escapeHtml(i.desc)}">
+        <input class="f-rate" type="number" min="0" step="0.01" placeholder="0.00" value="${i.rate}">
+        <input class="f-hours" type="number" min="0" step="0.25" placeholder="0" value="${i.hours}">
+        <button class="remove" title="Remove line">×</button>
+      </div>`).join('');
+    c.querySelectorAll('.item-row').forEach(row => {
+      const id = row.dataset.id;
+      row.querySelector('.f-desc').addEventListener('input', e => updateItem(id,'desc', e.target.value));
+      row.querySelector('.f-desc').addEventListener('blur', e => {
+        saveDescription(e.target.value);
+        const m = e.target.value.match(/for\s+(.+)/i);
+        if(m && tryAutoSelectClientFromResource(m[1].trim())) renderPreview();
+      });
+      row.querySelector('.f-rate').addEventListener('input', e => updateItem(id,'rate', e.target.value));
+      row.querySelector('.f-hours').addEventListener('input', e => updateItem(id,'hours', e.target.value));
+      row.querySelector('.remove').addEventListener('click', () => removeItem(id));
+    });
+  }
+  function updateItem(id, field, value){ const it = items.find(i=>i.id===id); if(it){ it[field]=value; renderPreview(); } }
+
+  let savedDescriptions = [];
+  function renderDescriptionList(){
+    const dl = $('saved-descriptions-list');
+    dl.innerHTML = savedDescriptions.map(d => `<option value="${escapeHtml(d)}"></option>`).join('');
+  }
+  async function saveDescription(text){
+    text = (text||'').trim();
+    if(!text || savedDescriptions.includes(text)) return;
+    savedDescriptions.push(text);
+    if(savedDescriptions.length > 50) savedDescriptions.shift(); // keep it manageable
+    await storageSet('saved-descriptions', savedDescriptions);
+    renderDescriptionList();
+  }
+
+  // ---------- Employee rate book ----------
+  function renderEmployeeList(){
+    const c = $('employee-list');
+    if(employees.length === 0){ c.innerHTML = '<div class="status-line">No saved rates yet.</div>'; return; }
+    c.innerHTML = employees.map((e, idx) => `
+      <div class="hist-row" data-idx="${idx}" style="padding:6px 10px; margin-bottom:6px;">
+        <div class="bottom" style="margin-top:0;">
+          <span>${escapeHtml(e.name)} — <b>$${Number(e.rate).toFixed(2)}/hr</b></span>
+          <div class="hist-actions">
+            <button class="btn btn-sm emp-del-btn" style="color:#B3453D;">Remove</button>
+          </div>
+        </div>
+      </div>`).join('');
+    c.querySelectorAll('.emp-del-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const idx = parseInt(e.target.closest('.hist-row').dataset.idx, 10);
+        employees.splice(idx, 1);
+        await storageSet('employee-rates', employees);
+        renderEmployeeList();
+      });
+    });
+  }
+  async function addOrUpdateEmployee(name, rate){
+    name = name.trim();
+    if(!name || isNaN(rate)) return;
+    const existing = employees.find(e => e.name.toLowerCase() === name.toLowerCase());
+    if(existing){ existing.rate = rate; }
+    else{ employees.push({name, rate}); }
+    await storageSet('employee-rates', employees);
+    renderEmployeeList();
+  }
+  function findEmployeeRate(name){
+    const norm = name.toLowerCase().trim();
+    let emp = employees.find(e => e.name.toLowerCase().trim() === norm);
+    if(!emp){
+      emp = employees.find(e => {
+        const en = e.name.toLowerCase().trim();
+        return norm.includes(en) || en.includes(norm);
+      });
+    }
+    return emp ? emp.rate : null;
+  }
+
+  // ---------- Client resolution + invoice-prefix "memory" ----------
+  function normalizeClientName(name){
+    return (name||'')
+      .toLowerCase()
+      .replace(/[,.]/g, '')
+      .replace(/\b(inc|incorporated|llc|ltd|limited|corp|corporation|co)\b/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  async function resolveClientFromNameAddress(name, address){
+    name = (name||'').trim();
+    if(!name) return null;
+    const norm = normalizeClientName(name);
+    let client = clients.find(c => normalizeClientName(c.name) === norm);
+    if(client){ if(address) client.address = address; }
+    else{ client = { id: 'c'+Date.now(), name, address: address||'', email: '' }; clients.push(client); }
+    await storageSet('clients', clients);
+    return client;
+  }
+  function selectClient(client){
+    if(!client) return;
+    selectedClientId = client.id;
+    renderClientOptions();
+  }
+  function getInvoicePrefix(invNumber){
+    const m = (invNumber||'').match(/^([A-Za-z_]+)/);
+    return m ? m[1] : null;
+  }
+  async function rememberPrefixClient(invNumber, clientId){
+    const prefix = getInvoicePrefix(invNumber);
+    if(!prefix || !clientId) return;
+    invoicePrefixClientMap[prefix] = clientId;
+    await storageSet('invoice-prefix-client-map', invoicePrefixClientMap);
+  }
+  function tryAutoSelectClientFromPrefix(invNumber){
+    const prefix = getInvoicePrefix(invNumber);
+    if(!prefix) return false;
+    const clientId = invoicePrefixClientMap[prefix];
+    if(!clientId) return false;
+    const client = clients.find(c => c.id === clientId);
+    if(!client) return false;
+    selectClient(client);
+    flashStatus(`Remembered client for "${prefix}" invoices: ${client.name}.`);
+    return true;
+  }
+  function findClientIdForResource(name){
+    if(!name) return null;
+    const norm = name.trim().toLowerCase();
+    for(const clientId in clientResourceMap){
+      if((clientResourceMap[clientId] || []).some(n => n.toLowerCase() === norm)) return clientId;
+    }
+    return null;
+  }
+  function tryAutoSelectClientFromResource(name){
+    if(selectedClientId) return false; // never override a deliberate choice
+    const clientId = findClientIdForResource(name);
+    if(!clientId) return false;
+    const client = clients.find(c => c.id === clientId);
+    if(!client) return false;
+    selectClient(client);
+    flashStatus(`Remembered client for ${name}: ${client.name}.`);
+    return true;
+  }
+
+  async function recordClientResource(clientId, name){
+    if(!clientId || !name) return;
+    name = name.trim();
+    if(!name) return;
+    if(!clientResourceMap[clientId]) clientResourceMap[clientId] = [];
+    if(!clientResourceMap[clientId].includes(name)){
+      clientResourceMap[clientId].push(name);
+      await storageSet('client-resource-map', clientResourceMap);
+    }
+  }
+  function resourcesForClient(clientId){
+    return clientId ? (clientResourceMap[clientId] || []) : [];
+  }
+
+  async function mergeDuplicateClients(){
+    const groups = {};
+    clients.forEach(c => {
+      const norm = normalizeClientName(c.name);
+      if(!groups[norm]) groups[norm] = [];
+      groups[norm].push(c);
+    });
+
+    let mergedCount = 0;
+    let changedClients = false, changedResourceMap = false, changedPrefixMap = false;
+
+    for(const norm in groups){
+      const group = groups[norm];
+      if(group.length < 2) continue;
+      // Keep whichever client record has the most resource history; ties keep the first.
+      group.sort((a,b) => (clientResourceMap[b.id]||[]).length - (clientResourceMap[a.id]||[]).length);
+      const primary = group[0];
+      const duplicates = group.slice(1);
+
+      duplicates.forEach(dup => {
+        const dupResources = clientResourceMap[dup.id] || [];
+        if(dupResources.length){
+          const merged = new Set([...(clientResourceMap[primary.id]||[]), ...dupResources]);
+          clientResourceMap[primary.id] = [...merged];
+          delete clientResourceMap[dup.id];
+          changedResourceMap = true;
+        }
+        for(const prefix in invoicePrefixClientMap){
+          if(invoicePrefixClientMap[prefix] === dup.id){ invoicePrefixClientMap[prefix] = primary.id; changedPrefixMap = true; }
+        }
+        if(selectedClientId === dup.id){ selectedClientId = primary.id; }
+        clients = clients.filter(c => c.id !== dup.id);
+        changedClients = true;
+        mergedCount++;
+      });
+    }
+
+    if(changedClients) await storageSet('clients', clients);
+    if(changedResourceMap) await storageSet('client-resource-map', clientResourceMap);
+    if(changedPrefixMap) await storageSet('invoice-prefix-client-map', invoicePrefixClientMap);
+    return mergedCount;
+  }
+
+  async function backfillClientResourceMap(){
+    // Client-resource tracking was added after some invoices already existed —
+    // reconstruct associations from invoice history for anything not yet recorded.
+    let changed = false;
+    invoicesHistory.forEach(rec => {
+      if(!rec.clientId || !rec.items) return;
+      rec.items.forEach(item => {
+        const m = (item.desc || '').match(/for\s+(.+)/i);
+        if(!m) return;
+        const name = m[1].trim();
+        if(!name) return;
+        if(!clientResourceMap[rec.clientId]) clientResourceMap[rec.clientId] = [];
+        if(!clientResourceMap[rec.clientId].includes(name)){
+          clientResourceMap[rec.clientId].push(name);
+          changed = true;
+        }
+      });
+    });
+    if(changed) await storageSet('client-resource-map', clientResourceMap);
+    return changed;
+  }
+
+  // ---------- Guided invoice assistant (chat-style step-through) ----------
+  let guidedState = { name: null, month: null, hours: null };
+
+  function startGuidedFlow(){
+    guidedState = { name: null, month: null, hours: null };
+    $('guided-chat').classList.remove('hidden');
+    $('guided-step-name').classList.add('hidden');
+    $('guided-step-month').classList.add('hidden');
+    $('guided-step-hours').classList.add('hidden');
+    $('guided-step-confirm').classList.add('hidden');
+    $('guided-new-client-form').classList.add('hidden');
+    $('guided-step-client').classList.remove('hidden');
+    renderGuidedClientOptions();
+    $('guided-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function renderGuidedClientOptions(){
+    const wrap = $('guided-client-options');
+    if(clients.length === 0){
+      wrap.innerHTML = '<div class="status-line">No saved clients yet — add one below.</div>';
+      return;
+    }
+    wrap.innerHTML = clients.map(c =>
+      `<button type="button" class="chat-option-btn" data-id="${escapeHtml(c.id)}">${escapeHtml(c.name)}</button>`
+    ).join('');
+    wrap.querySelectorAll('.chat-option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const client = clients.find(c => c.id === btn.dataset.id);
+        selectClient(client);
+        goToGuidedName();
+      });
+    });
+  }
+
+  function goToGuidedName(){
+    $('guided-step-client').classList.add('hidden');
+    $('guided-step-name').classList.remove('hidden');
+    $('guided-name-input').value = '';
+    renderGuidedNameOptions();
+  }
+
+  function renderGuidedNameOptions(showAll){
+    const wrap = $('guided-name-options');
+    const knownForClient = resourcesForClient(selectedClientId);
+    const filtered = (!showAll && knownForClient.length > 0)
+      ? employees.filter(e => knownForClient.includes(e.name))
+      : employees;
+
+    if(filtered.length === 0){
+      wrap.innerHTML = '<div class="status-line">No saved employees yet — just type a name below.</div>';
+      return;
+    }
+
+    const showAllLink = (!showAll && knownForClient.length > 0 && filtered.length < employees.length)
+      ? `<button type="button" class="btn-text" id="guided-show-all-employees" style="display:block; margin-bottom:8px;">Not seeing who you need? Show all employees</button>`
+      : '';
+
+    wrap.innerHTML = showAllLink + filtered.map(e =>
+      `<button type="button" class="chat-option-btn" data-name="${escapeHtml(e.name)}">${escapeHtml(e.name)}</button>`
+    ).join('');
+
+    wrap.querySelectorAll('.chat-option-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        guidedState.name = btn.dataset.name;
+        goToGuidedMonth();
+      });
+    });
+    const showAllBtn = $('guided-show-all-employees');
+    if(showAllBtn) showAllBtn.addEventListener('click', () => renderGuidedNameOptions(true));
+  }
+
+  function goToGuidedMonth(){
+    $('guided-step-name').classList.add('hidden');
+    $('guided-step-month').classList.remove('hidden');
+    $('guided-month-input').value = guidedState.month || '';
+    $('guided-month-input').focus();
+  }
+
+  function goToGuidedHours(){
+    $('guided-step-month').classList.add('hidden');
+    $('guided-step-hours').classList.remove('hidden');
+    $('guided-hours-input').value = guidedState.hours || '';
+    $('guided-hours-input').focus();
+  }
+
+  function showGuidedConfirm(){
+    $('guided-step-hours').classList.add('hidden');
+    const rate = findEmployeeRate(guidedState.name);
+    const rateText = rate !== null ? `$${Number(rate).toFixed(2)}/hr` : 'no saved rate yet — you can set one after';
+    const client = clients.find(c => c.id === selectedClientId);
+    const clientLine = client ? `Client: <b>${escapeHtml(client.name)}</b>. ` : '';
+    $('guided-confirm-text').innerHTML =
+      `Got it! ${clientLine}I'll add <b>${escapeHtml(guidedState.name)}</b> for <b>${escapeHtml(monthLabel(guidedState.month))}</b>, ` +
+      `<b>${guidedState.hours} hours</b> at ${rateText}. Ready to add this to your invoice?`;
+    $('guided-step-confirm').classList.remove('hidden');
+  }
+
+  async function applyGuidedResult(){
+    const rate = findEmployeeRate(guidedState.name);
+    const id = newItemId();
+    const existingNonEmpty = items.filter(i => (i.desc && i.desc.trim()) || i.rate !== '' || i.hours !== '');
+    items = [{ id, desc: `Consulting services for ${guidedState.name}`, rate: rate !== null ? rate : '', hours: guidedState.hours }, ...existingNonEmpty];
+    renderItems();
+    $('inv-month-picker').value = guidedState.month;
+    $('inv-month-picker').dispatchEvent(new Event('change'));
+    if(selectedClientId) await recordClientResource(selectedClientId, guidedState.name);
+    renderPreview();
+    flashStatus(`Added ${guidedState.name}'s invoice for ${monthLabel(guidedState.month)}.`);
+    $('guided-chat').classList.add('hidden');
+    $('invoice-preview').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  // ---------- Resource invoice coverage tracker ----------
+  function incrementMonth(ym){
+    let [y,m] = ym.split('-').map(Number);
+    m++; if(m>12){ m=1; y++; }
+    return `${y}-${String(m).padStart(2,'0')}`;
+  }
+  function computeNextPendingMonth(months){
+    if(!months || months.length === 0) return null;
+    const sorted = [...new Set(months)].sort();
+    for(let i=0;i<sorted.length-1;i++){
+      const next = incrementMonth(sorted[i]);
+      if(next !== sorted[i+1]) return next; // gap found — recommend the missing month
+    }
+    return incrementMonth(sorted[sorted.length-1]); // no gaps — recommend the month right after the latest
+  }
+  function computeDefaultPendingMonth(){
+    // Earliest month where any known resource actually has a pending gap,
+    // rather than always defaulting to today's calendar month.
+    let earliest = null;
+    Object.keys(resourceCoverage).forEach(name => {
+      const next = computeNextPendingMonth(resourceCoverage[name]);
+      if(next && (!earliest || next < earliest)) earliest = next;
+    });
+    return earliest || todayISO().slice(0,7);
+  }
+  function monthLabel(ym){
+    if(!ym) return '';
+    const [y,m] = ym.split('-').map(Number);
+    return new Date(y, m-1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  }
+  async function recordResourceCoverage(name, periodStartISO){
+    if(!name || !periodStartISO) return;
+    name = name.trim();
+    if(!name) return;
+    const ym = periodStartISO.slice(0,7);
+    if(!resourceCoverage[name]) resourceCoverage[name] = [];
+    if(!resourceCoverage[name].includes(ym)){
+      resourceCoverage[name].push(ym);
+      resourceCoverage[name].sort();
+      await storageSet('resource-coverage', resourceCoverage);
+      renderResourceTracker();
+    }
+  }
+
+  function allKnownResourceNames(){
+    // Union of everyone with logged coverage AND everyone with a saved rate —
+    // catches resources who haven't been invoiced at all yet (no coverage
+    // entries), which is exactly who a "pending" reminder needs to surface.
+    const names = new Set([...Object.keys(resourceCoverage), ...employees.map(e => e.name)]);
+    return [...names].sort((a,b) => a.localeCompare(b));
+  }
+  function allKnownMonths(){
+    const months = new Set();
+    Object.values(resourceCoverage).forEach(arr => arr.forEach(m => months.add(m)));
+    return [...months].sort();
+  }
+  function populateTrackerFilters(){
+    const empSel = $('tracker-filter-employee');
+    const curEmp = empSel.value;
+    empSel.innerHTML = '<option value="">Choose employee…</option>' +
+      allKnownResourceNames().map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');
+    empSel.value = curEmp;
+
+    const monthSel = $('tracker-filter-month');
+    const curMonth = monthSel.value;
+    monthSel.innerHTML = '<option value="">Choose month…</option>' +
+      allKnownMonths().map(m => `<option value="${m}">${escapeHtml(monthLabel(m))}</option>`).join('');
+    monthSel.value = curMonth;
+
+    if(!$('pending-check-month').value) $('pending-check-month').value = computeDefaultPendingMonth();
+
+    $('manual-cover-name-list').innerHTML = allKnownResourceNames()
+      .map(n => `<option value="${escapeHtml(n)}"></option>`).join('');
+  }
+
+  function renderResourceTracker(){
+    const c = $('resource-tracker-list');
+    if(!c) return;
+    populateTrackerFilters();
+
+    const empFilter = $('tracker-filter-employee').value;
+    const monthFilter = $('tracker-filter-month').value;
+
+    if(!empFilter && !monthFilter){
+      c.innerHTML = '<div class="status-line">Choose an employee or a month above to see invoice coverage.</div>';
+      renderPendingList();
+      return;
+    }
+
+    let names = Object.keys(resourceCoverage).sort();
+    if(empFilter) names = names.filter(n => n === empFilter);
+    if(monthFilter) names = names.filter(n => resourceCoverage[n].includes(monthFilter));
+
+    if(names.length === 0){
+      c.innerHTML = '<div class="status-line">No matching invoice history — upload or generate an invoice with a recognizable "for [Name]" line item to start tracking, or adjust the filters above.</div>';
+    } else {
+      c.innerHTML = names.map(name => {
+        const months = resourceCoverage[name];
+        const next = computeNextPendingMonth(months);
+        return `
+          <div class="hist-row" data-name="${escapeHtml(name)}" style="margin-bottom:6px;">
+            <div class="top"><span>${escapeHtml(name)}</span></div>
+            <div class="desc">Invoice done for: ${months.map(monthLabel).join(', ')}</div>
+            <div class="bottom">
+              <span style="color:var(--ink-soft);">Upcoming invoice: <b>${escapeHtml(monthLabel(next))}</b></span>
+              <button class="btn btn-sm use-pending-month-btn">Use this month</button>
+            </div>
+          </div>`;
+      }).join('');
+      c.querySelectorAll('.use-pending-month-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const row = btn.closest('.hist-row');
+          const name = row.dataset.name;
+          const next = computeNextPendingMonth(resourceCoverage[name]);
+          if(!next) return;
+          $('inv-month-picker').value = next;
+          $('inv-month-picker').dispatchEvent(new Event('change'));
+          flashStatus(`Set invoice month to ${monthLabel(next)} for ${name}.`);
+        });
+      });
+    }
+
+    renderPendingList();
+  }
+
+  function renderPendingList(){
+    const c = $('pending-list');
+    if(!c) return;
+    const targetMonth = $('pending-check-month').value || todayISO().slice(0,7);
+    const missing = allKnownResourceNames().filter(name => {
+      const covered = resourceCoverage[name] || [];
+      return !covered.includes(targetMonth);
+    });
+
+    if(missing.length === 0){
+      c.innerHTML = `<div class="status-line">Everyone's covered for ${escapeHtml(monthLabel(targetMonth))} — no pending invoices.</div>`;
+      return;
+    }
+    c.innerHTML = `<div class="status-line" style="margin-bottom:6px;">${missing.length} pending for ${escapeHtml(monthLabel(targetMonth))}:</div>` +
+      missing.map(name => `
+        <div class="hist-row" data-name="${escapeHtml(name)}" style="margin-bottom:6px; border-color:#E8B4AE;">
+          <div class="top"><span>${escapeHtml(name)}</span><span style="color:#B3453D;font-weight:700;font-size:11px;">PENDING</span></div>
+          <div class="bottom">
+            <span></span>
+            <button class="btn btn-sm use-pending-name-btn">Set as this month's invoice</button>
+          </div>
+        </div>`).join('');
+    c.querySelectorAll('.use-pending-name-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const name = btn.closest('.hist-row').dataset.name;
+        $('inv-month-picker').value = targetMonth;
+        $('inv-month-picker').dispatchEvent(new Event('change'));
+        flashStatus(`Set invoice month to ${monthLabel(targetMonth)} — now add ${name}'s hours below.`);
+      });
+    });
+  }
+
+  // ---------- Timesheet / email parser (best-effort, regex-based) ----------
+  // ---------- Email file (.eml) parsing ----------
+  function extractHeader(text, name){
+    const re = new RegExp('^'+name+':\\s*(.*)$', 'im');
+    const m = text.match(re);
+    return m ? m[1].trim() : '';
+  }
+  function decodeQuotedPrintable(str){
+    return str.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (m,h) => String.fromCharCode(parseInt(h,16)));
+  }
+  function decodeBody(body, encoding){
+    encoding = (encoding||'').toLowerCase();
+    if(encoding === 'base64'){
+      try{ return decodeURIComponent(escape(atob(body.replace(/\s/g,'')))); } catch(e){ return body; }
+    }
+    if(encoding === 'quoted-printable') return decodeQuotedPrintable(body);
+    return body;
+  }
+  function stripHtml(html){
+    html = html.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    return div.textContent || div.innerText || '';
+  }
+  // ---------- Outlook .msg (MS-CFB compound file) parsing ----------
+  // Best-effort implementation of the MS-CFB container format + MS-OXMSG
+  // property stream naming, extracting just the PR_BODY stream.
+  function parseMsgFile(arrayBuffer){
+    const view = new DataView(arrayBuffer);
+    const bytes = new Uint8Array(arrayBuffer);
+
+    const SIG = [0xD0,0xCF,0x11,0xE0,0xA1,0xB1,0x1A,0xE1];
+    for(let i=0;i<8;i++){
+      if(view.getUint8(i) !== SIG[i]) throw new Error('Not a valid .msg (OLE Compound File) file.');
+    }
+
+    const FREESECT = 0xFFFFFFFF, ENDOFCHAIN = 0xFFFFFFFE;
+    const sectorShift = view.getUint16(30, true);
+    const sectorSize = 1 << sectorShift;
+    const miniSectorShift = view.getUint16(32, true);
+    const miniSectorSize = 1 << miniSectorShift;
+    const numFatSectors = view.getUint32(44, true);
+    const firstDirSector = view.getUint32(48, true);
+    const miniStreamCutoff = view.getUint32(56, true);
+    const firstMiniFatSector = view.getUint32(60, true);
+    const numMiniFatSectors = view.getUint32(64, true);
+    const firstDifatSector = view.getUint32(68, true);
+    const numDifatSectors = view.getUint32(72, true);
+
+    const sectorOffset = idx => (idx + 1) * sectorSize;
+    const entriesPerSector = sectorSize / 4;
+
+    // DIFAT -> list of FAT sector indices
+    let difat = [];
+    for(let i=0;i<109;i++){
+      const v = view.getUint32(76 + i*4, true);
+      if(v !== FREESECT) difat.push(v);
+    }
+    let nextDifat = firstDifatSector, remaining = numDifatSectors, guard1 = 0;
+    while(nextDifat !== ENDOFCHAIN && nextDifat !== FREESECT && remaining > 0 && guard1++ < 100000){
+      const off = sectorOffset(nextDifat);
+      for(let i=0;i<entriesPerSector-1;i++){
+        const v = view.getUint32(off + i*4, true);
+        if(v !== FREESECT) difat.push(v);
+      }
+      nextDifat = view.getUint32(off + (entriesPerSector-1)*4, true);
+      remaining--;
+    }
+    difat = difat.slice(0, numFatSectors);
+
+    // Build FAT
+    const fat = new Uint32Array(difat.length * entriesPerSector);
+    for(let s=0;s<difat.length;s++){
+      const off = sectorOffset(difat[s]);
+      for(let i=0;i<entriesPerSector;i++) fat[s*entriesPerSector+i] = view.getUint32(off+i*4, true);
+    }
+    function getChain(start){
+      const chain = []; let sec = start, guard = 0;
+      while(sec !== ENDOFCHAIN && sec !== FREESECT && guard++ < 1000000){ chain.push(sec); sec = fat[sec]; }
+      return chain;
+    }
+    function readBySectorChain(start, size){
+      const chain = getChain(start);
+      const out = new Uint8Array(chain.length * sectorSize);
+      let pos = 0;
+      for(const sec of chain){ const off = sectorOffset(sec); out.set(bytes.subarray(off, off+sectorSize), pos); pos += sectorSize; }
+      return out.subarray(0, size);
+    }
+
+    // Directory entries
+    const dirChain = getChain(firstDirSector);
+    const direntSize = 128;
+    const NOSTREAM = 0xFFFFFFFF;
+    const dirents = [];
+    for(const sec of dirChain){
+      const off = sectorOffset(sec);
+      for(let i=0;i<sectorSize/direntSize;i++){
+        const base = off + i*direntSize;
+        const nameLen = view.getUint16(base+64, true);
+        if(nameLen === 0) continue;
+        let name = '';
+        for(let c=0;c<(nameLen/2 - 1);c++) name += String.fromCharCode(view.getUint16(base+c*2, true));
+        dirents.push({
+          name,
+          objType: view.getUint8(base+66),
+          leftSibling: view.getUint32(base+68, true),
+          rightSibling: view.getUint32(base+72, true),
+          childID: view.getUint32(base+76, true),
+          startSector: view.getUint32(base+116, true),
+          size: view.getUint32(base+120, true)
+        });
+      }
+    }
+
+    function collectChildren(entry){
+      // In-order traversal of the red-black tree of direct children of a storage entry
+      const result = [];
+      function visit(idx){
+        if(idx === NOSTREAM || !dirents[idx]) return;
+        visit(dirents[idx].leftSibling);
+        result.push(dirents[idx]);
+        visit(dirents[idx].rightSibling);
+      }
+      if(entry.childID !== NOSTREAM) visit(entry.childID);
+      return result;
+    }
+
+    const rootIdx = dirents.findIndex(d => d.objType === 5);
+    if(rootIdx === -1) throw new Error('No root storage found — this may not be a valid .msg file.');
+    const root = dirents[rootIdx];
+    const miniStreamData = readBySectorChain(root.startSector, root.size);
+
+    let miniFat = new Uint32Array(0);
+    if(firstMiniFatSector !== ENDOFCHAIN && numMiniFatSectors > 0){
+      const chain = getChain(firstMiniFatSector);
+      miniFat = new Uint32Array(chain.length * entriesPerSector);
+      let idx = 0;
+      for(const sec of chain){ const off = sectorOffset(sec); for(let i=0;i<entriesPerSector;i++) miniFat[idx++] = view.getUint32(off+i*4, true); }
+    }
+    function getMiniChain(start){
+      const chain = []; let sec = start, guard = 0;
+      while(sec !== ENDOFCHAIN && sec !== FREESECT && guard++ < 1000000){ chain.push(sec); sec = miniFat[sec]; }
+      return chain;
+    }
+    function readMiniStream(start, size){
+      const chain = getMiniChain(start);
+      const out = new Uint8Array(chain.length * miniSectorSize);
+      let pos = 0;
+      for(const msec of chain){ const off = msec*miniSectorSize; out.set(miniStreamData.subarray(off, off+miniSectorSize), pos); pos += miniSectorSize; }
+      return out.subarray(0, size);
+    }
+    function readStream(dirent){
+      return dirent.size >= miniStreamCutoff ? readBySectorChain(dirent.startSector, dirent.size) : readMiniStream(dirent.startSector, dirent.size);
+    }
+
+    const topLevel = collectChildren(root);
+
+    const cleanStr = s => s.replace(/\0+$/, '').trim();
+
+    // PR_BODY: property 0x1000, type Unicode (001F) preferred, else ANSI (001E)
+    let bodyEntry = topLevel.find(d => d.objType === 2 && d.name === '__substg1.0_1000001F');
+    let unicode = true;
+    if(!bodyEntry){ bodyEntry = topLevel.find(d => d.objType === 2 && d.name === '__substg1.0_1000001E'); unicode = false; }
+    let bodyText = '';
+    if(bodyEntry){
+      const data = readStream(bodyEntry);
+      bodyText = cleanStr(unicode ? new TextDecoder('utf-16le').decode(data) : new TextDecoder('windows-1252').decode(data));
+    }
+    if(!bodyText){
+      // Fall back to PR_HTML (0x1013, binary) when there's no plain-text body —
+      // common for real Outlook mail, which often only stores the HTML version.
+      const htmlEntry = topLevel.find(d => d.objType === 2 && d.name === '__substg1.0_10130102');
+      if(htmlEntry){
+        const data = readStream(htmlEntry);
+        let html;
+        try{ html = new TextDecoder('utf-8', { fatal: true }).decode(data); }
+        catch(e){ html = new TextDecoder('windows-1252').decode(data); }
+        bodyText = cleanStr(stripHtml(html));
+      }
+    }
+
+    // Attachments: top-level storages named "__attach_version1.0_#..."
+    const attachments = [];
+    const attachStorages = topLevel.filter(d => d.objType === 1 && /^__attach_version1\.0_#/i.test(d.name));
+    for(const storage of attachStorages){
+      const children = collectChildren(storage);
+      const dataEntry = children.find(d => d.objType === 2 && d.name === '__substg1.0_37010102');
+      if(!dataEntry) continue; // e.g. embedded-message attachments, not a file blob
+      let nameEntry = children.find(d => d.objType === 2 && d.name === '__substg1.0_3707001F');
+      let nameUnicode = true;
+      if(!nameEntry){ nameEntry = children.find(d => d.objType === 2 && d.name === '__substg1.0_3707001E'); nameUnicode = false; }
+      if(!nameEntry){ nameEntry = children.find(d => d.objType === 2 && d.name === '__substg1.0_3704001F'); nameUnicode = true; }
+      if(!nameEntry){ nameEntry = children.find(d => d.objType === 2 && d.name === '__substg1.0_3704001E'); nameUnicode = false; }
+      let filename = 'attachment';
+      if(nameEntry){
+        const nd = readStream(nameEntry);
+        filename = cleanStr(nameUnicode ? new TextDecoder('utf-16le').decode(nd) : new TextDecoder('windows-1252').decode(nd));
+      }
+      attachments.push({ filename, data: readStream(dataEntry) });
+    }
+
+    if(!bodyEntry && attachments.length === 0){
+      throw new Error('No plain-text body or attachments found in this .msg file (it may be RTF/HTML-only).');
+    }
+    return { body: bodyText, attachments };
+  }
+
+  function base64ToBytes(b64){
+    const clean = b64.replace(/[^A-Za-z0-9+/=]/g, '');
+    const bin = atob(clean);
+    const out = new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function extractFilename(headers){
+    const disp = extractHeader(headers, 'Content-Disposition');
+    const ct = extractHeader(headers, 'Content-Type');
+    const m = disp.match(/filename\*?=("?)([^";]+)\1/i) || ct.match(/name\*?=("?)([^";]+)\1/i);
+    return m ? m[2].replace(/^UTF-8''/i, '') : null;
+  }
+  function parseMimeParts(headers, body){
+    const contentType = extractHeader(headers, 'Content-Type');
+    const boundaryMatch = contentType.match(/boundary="?([^";]+)"?/i);
+    if(!boundaryMatch) return [{ headers, body }];
+    const boundary = boundaryMatch[1];
+    const rawParts = body.split('--'+boundary).slice(1, -1);
+    let leaves = [];
+    for(const part of rawParts){
+      const pHeaderEnd = part.indexOf('\n\n');
+      if(pHeaderEnd < 0) continue;
+      const pHeaders = part.slice(0, pHeaderEnd);
+      const pBody = part.slice(pHeaderEnd+2);
+      const pType = extractHeader(pHeaders, 'Content-Type');
+      if(/^multipart\//i.test(pType)) leaves = leaves.concat(parseMimeParts(pHeaders, pBody));
+      else leaves.push({ headers: pHeaders, body: pBody });
+    }
+    return leaves;
+  }
+  function getEmlLeafParts(raw){
+    raw = raw.replace(/\r\n/g, '\n');
+    const headerEnd = raw.indexOf('\n\n');
+    const headers = headerEnd >= 0 ? raw.slice(0, headerEnd) : raw;
+    const body = headerEnd >= 0 ? raw.slice(headerEnd+2) : '';
+    return parseMimeParts(headers, body);
+  }
+  function parseEmlToPlainText(raw){
+    const leaves = getEmlLeafParts(raw);
+    const plain = leaves.find(p => /text\/plain/i.test(extractHeader(p.headers,'Content-Type')) && !extractFilename(p.headers));
+    if(plain) return decodeBody(plain.body, extractHeader(plain.headers, 'Content-Transfer-Encoding'));
+    const html = leaves.find(p => /text\/html/i.test(extractHeader(p.headers,'Content-Type')) && !extractFilename(p.headers));
+    if(html) return stripHtml(decodeBody(html.body, extractHeader(html.headers, 'Content-Transfer-Encoding')));
+    return leaves.map(p => p.body).join('\n');
+  }
+  function extractEmlAttachments(raw){
+    const leaves = getEmlLeafParts(raw);
+    const attachments = [];
+    for(const p of leaves){
+      const filename = extractFilename(p.headers);
+      if(!filename) continue;
+      const ext = (filename.match(/\.([a-z0-9]+)$/i) || [,''])[1].toLowerCase();
+      if(!['xlsx','xls','csv'].includes(ext)) continue;
+      const enc = extractHeader(p.headers, 'Content-Transfer-Encoding').toLowerCase();
+      const data = enc === 'base64' ? base64ToBytes(p.body) : new TextEncoder().encode(decodeBody(p.body, enc));
+      attachments.push({ filename, data });
+    }
+    return attachments;
+  }
+
+  // ---------- Spreadsheet attachment parsing ----------
+  function splitCSVLine(line){
+    const cells = []; let cur = '', inQuotes = false;
+    for(let i=0;i<line.length;i++){
+      const c = line[i];
+      if(inQuotes){
+        if(c === '"'){ if(line[i+1] === '"'){ cur += '"'; i++; } else inQuotes = false; }
+        else cur += c;
+      } else {
+        if(c === '"') inQuotes = true;
+        else if(c === ',') { cells.push(cur); cur = ''; }
+        else cur += c;
+      }
+    }
+    cells.push(cur);
+    return cells;
+  }
+  function parseCSVBytes(bytes){
+    const text = new TextDecoder('utf-8').decode(bytes);
+    return text.split(/\r?\n/).filter(l => l.length > 0).map(splitCSVLine);
+  }
+  let xlsxLoadPromise = null;
+  function ensureXLSXLoaded(){
+    if(window.XLSX) return Promise.resolve();
+    if(xlsxLoadPromise) return xlsxLoadPromise;
+    xlsxLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Could not load the spreadsheet-reading library — check your internet connection.'));
+      document.head.appendChild(s);
+    });
+    return xlsxLoadPromise;
+  }
+  async function parseXLSXWorkbookSheets(bytes){
+    await ensureXLSXLoaded();
+    const wb = XLSX.read(bytes, { type: 'array' });
+    return wb.SheetNames.map(name => ({
+      name,
+      rows: XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, defval: '' })
+    }));
+  }
+
+  // ---------- Import from a previous invoice PDF ----------
+  let pdfjsLoadPromise = null;
+  function ensurePdfJsLoaded(){
+    if(window.pdfjsLib) return Promise.resolve();
+    if(pdfjsLoadPromise) return pdfjsLoadPromise;
+    pdfjsLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.5.141/pdf.min.js';
+      s.onload = () => {
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.5.141/pdf.worker.min.js';
+        resolve();
+      };
+      s.onerror = () => reject(new Error('Could not load the PDF-reading library — check your internet connection.'));
+      document.head.appendChild(s);
+    });
+    return pdfjsLoadPromise;
+  }
+  async function extractInvoiceRowsFromPDF(arrayBuffer){
+    await ensurePdfJsLoaded();
+    const doc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let allItems = [];
+    for(let p=1; p<=doc.numPages; p++){
+      const page = await doc.getPage(p);
+      const content = await page.getTextContent();
+      content.items.forEach(i => allItems.push({ str: i.str, x: i.transform[4], y: i.transform[5] }));
+    }
+    return buildRows(allItems);
+  }
+  function buildRows(items){
+    // Groups text items by their actual (x,y) position on the page. This matters
+    // because many real invoice PDFs (e.g. Excel exports) emit text in whatever
+    // order the generator wrote it internally — not visual reading order — so we
+    // rebuild true reading order from coordinates rather than trusting stream order.
+    const rows = [];
+    items.forEach(it => {
+      if(!it.str.trim()) return;
+      let row = rows.find(r => Math.abs(r.y - it.y) < 3);
+      if(!row){ row = { y: it.y, items: [] }; rows.push(row); }
+      row.items.push(it);
+    });
+    rows.sort((a,b) => b.y - a.y);
+    rows.forEach(r => r.items.sort((a,b) => a.x - b.x));
+    return rows;
+  }
+  function rowText(row){ return row.items.map(i => i.str).join(' ').trim(); }
+  function splitNameAddress(blob){
+    blob = blob.trim();
+    const m = blob.match(/^(.*?)(?=\d)/);
+    if(m && m[1].trim()) return { name: m[1].trim(), address: blob.slice(m[1].length).trim() };
+    return { name: blob, address: '' };
+  }
+  function isNumericTripleRow(t){
+    return /^\$?\s*[\d,]+\.\d{2}\s+[\d.]+\s+\$?\s*[\d,]+\.\d{2}$/.test(t.trim());
+  }
+  function extractLineItemsFromTableRows(rows){
+    // Wrapped multi-line descriptions split a single logical table row across
+    // several y-positions, with the rate/hours/amount often sandwiched between
+    // description lines. Group rows into blocks by y-gap (small gap = same row,
+    // large gap = new row) before extracting fields from each block.
+    const blocks = [];
+    let currentBlock = [];
+    for(let i=0;i<rows.length;i++){
+      if(i > 0){
+        const gap = rows[i-1].y - rows[i].y;
+        if(gap > 15 && currentBlock.length){ blocks.push(currentBlock); currentBlock = []; }
+      }
+      currentBlock.push(rows[i]);
+    }
+    if(currentBlock.length) blocks.push(currentBlock);
+
+    const results = [];
+    blocks.forEach(block => {
+      let descParts = [], rate=null, hours=null;
+      for(const row of block){
+        const t = rowText(row);
+        const m = t.match(/^(.*?)\s*\$?\s*([\d,]+\.\d{2})\s+([\d.]+)\s+\$?\s*([\d,]+\.\d{2})$/);
+        if(m && m[1].trim()){
+          descParts = [m[1].trim()];
+          rate = parseFloat(m[2].replace(/,/g,''));
+          hours = parseFloat(m[3]);
+          break;
+        }
+      }
+      if(rate === null){
+        block.forEach(row => {
+          const t = rowText(row);
+          if(isNumericTripleRow(t)){
+            const m = t.match(/^\$?\s*([\d,]+\.\d{2})\s+([\d.]+)\s+\$?\s*([\d,]+\.\d{2})$/);
+            if(m){ rate = parseFloat(m[1].replace(/,/g,'')); hours = parseFloat(m[2]); }
+          } else if(t){
+            descParts.push(t);
+          }
+        });
+      }
+      if(rate !== null && descParts.length){
+        const desc = descParts.join(' ').trim();
+        const nameMatch = desc.match(/for\s+(.+)/i);
+        results.push({ description: desc, rate, hours, employeeName: nameMatch ? nameMatch[1].trim() : null });
+      }
+    });
+    return results;
+  }
+  function extractLabeledValueFromRow(row, labelRe){
+    const idx = row.items.findIndex(it => labelRe.test(it.str.trim()));
+    if(idx === -1) return null;
+    const rest = row.items.slice(idx+1).map(it=>it.str).join(' ').trim();
+    return rest || null;
+  }
+  function findMetaValue(rows, labelRe){
+    for(const row of rows){
+      const v = extractLabeledValueFromRow(row, labelRe);
+      if(v) return v;
+    }
+    return null;
+  }
+  function parseHumanDateToISO(str){
+    const d = new Date(str);
+    if(isNaN(d.getTime())) return null;
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  function mmddyyyyToISO(str){
+    const m = (str||'').trim().match(/^(\d{2})-(\d{2})-(\d{4})$/);
+    if(!m) return null;
+    return `${m[3]}-${m[1]}-${m[2]}`;
+  }
+  function addOneMonthClamped(iso){
+    const [y,m,d] = iso.split('-').map(Number);
+    let newY = y, newM = m+1;
+    if(newM > 12){ newM = 1; newY++; }
+    const lastDay = new Date(newY, newM, 0).getDate();
+    return `${newY}-${String(newM).padStart(2,'0')}-${String(Math.min(d,lastDay)).padStart(2,'0')}`;
+  }
+  function lastDayOfMonthISO(iso){
+    const [y,m] = iso.split('-').map(Number);
+    return `${y}-${String(m).padStart(2,'0')}-${String(new Date(y,m,0).getDate()).padStart(2,'0')}`;
+  }
+  function daysBetweenISO(a,b){
+    return Math.round((new Date(b+'T00:00:00') - new Date(a+'T00:00:00')) / 86400000);
+  }
+  function nextInvoiceNumber(prevNumber){
+    const m = (prevNumber||'').match(/^(.*?)(\d+)$/);
+    if(!m) return null;
+    const prefix = m[1], digits = m[2];
+    return prefix + (parseInt(digits,10)+1).toString().padStart(digits.length, '0');
+  }
+  function tryUpdateInvoiceNumberForMonth(currentNumber, yearYY, monthMM){
+    // Only rewrites the number if its trailing 4 digits look like a YYMM
+    // pattern (i.e. the last 2 digits are a plausible month, 01-12) — avoids
+    // clobbering unrelated numbering schemes like "HW_0328" or "TTS_063".
+    const m = (currentNumber||'').match(/^(.*?)(\d{2})(\d{2})$/);
+    if(!m) return null;
+    const existingMonth = parseInt(m[3], 10);
+    if(existingMonth < 1 || existingMonth > 12) return null;
+    return m[1] + yearYY + monthMM;
+  }
+  function extractInvoiceMeta(rows){
+    const invNumberRaw = findMetaValue(rows, /^invoice\s*#:?$/i);
+    const invDateRaw = findMetaValue(rows, /^invoice\s*date:?$/i);
+    const dueDateRaw = findMetaValue(rows, /due\s*date$/i);
+    const periodRaw = findMetaValue(rows, /^invoice\s*period$/i);
+
+    const invDate = invDateRaw ? parseHumanDateToISO(invDateRaw) : null;
+    const dueDate = dueDateRaw ? parseHumanDateToISO(dueDateRaw) : null;
+    let periodStart = null, periodEnd = null;
+    if(periodRaw){
+      const parts = periodRaw.split(/\s*-\s*(?=\d{2}-\d{2}-\d{4}$)/);
+      if(parts.length === 2){ periodStart = mmddyyyyToISO(parts[0]); periodEnd = mmddyyyyToISO(parts[1]); }
+    }
+
+    const result = { invNumberRaw, invDate, dueDate, periodStart, periodEnd };
+    if(invNumberRaw) result.nextInvNumber = nextInvoiceNumber(invNumberRaw);
+    if(periodStart){
+      result.nextPeriodStart = addOneMonthClamped(periodStart);
+      result.nextPeriodEnd = lastDayOfMonthISO(result.nextPeriodStart);
+    }
+    result.nextInvDate = todayISO();
+    if(invDate && dueDate){
+      result.nextDueDate = plusDays(result.nextInvDate, daysBetweenISO(invDate, dueDate));
+    }
+    return result;
+  }
+
+  function parseInvoicePdfRows(rows){
+    const result = { billTo: null, shipTo: null, lineItems: [], meta: extractInvoiceMeta(rows) };
+
+    const btIdx = rows.findIndex(r => r.items.some(i => /bill to:?/i.test(i.str)));
+    if(btIdx !== -1){
+      const labelRow = rows[btIdx];
+      const stItem = labelRow.items.find(i => /ship to:?/i.test(i.str));
+      const divider = stItem ? stItem.x : Infinity;
+      let endIdx = rows.length;
+      for(let i=btIdx+1;i<rows.length;i++){
+        if(rows[i].items.some(it => /^description$/i.test(it.str))){ endIdx = i; break; }
+      }
+      let leftParts = [], rightParts = [];
+      for(let i=btIdx+1;i<endIdx;i++){
+        const row = rows[i];
+        const left = row.items.filter(it => it.x < divider).map(it=>it.str).join(' ').trim();
+        const right = row.items.filter(it => it.x >= divider).map(it=>it.str).join(' ').trim();
+        if(left) leftParts.push(left);
+        if(right) rightParts.push(right);
+      }
+      if(leftParts.length) result.billTo = splitNameAddress(leftParts.join(' '));
+      if(rightParts.length) result.shipTo = splitNameAddress(rightParts.join(' '));
+    }
+
+    const descIdx = rows.findIndex(r => r.items.some(i => /^description$/i.test(i.str)));
+    if(descIdx !== -1){
+      let endIdx = rows.length;
+      for(let i=descIdx+1;i<rows.length;i++){
+        const t = rowText(rows[i]);
+        if(/^total\b/i.test(t) || /balance due/i.test(t)){ endIdx = i; break; }
+      }
+      result.lineItems = extractLineItemsFromTableRows(rows.slice(descIdx+1, endIdx));
+    }
+    return result;
+  }
+
+  let importedInvoiceData = null;
+  function renderInvoicePdfPreview(){
+    const c = $('invoice-pdf-preview');
+    if(!importedInvoiceData){ c.innerHTML = ''; return; }
+    const d = importedInvoiceData;
+    const meta = d.meta || {};
+    let html = '';
+    if(d.billTo){
+      html += `
+        <div class="item-card">
+          <label>Bill To name</label><input id="imp-bill-name" value="${escapeHtml(d.billTo.name)}">
+          <label>Bill To address</label><textarea id="imp-bill-address">${escapeHtml(d.billTo.address)}</textarea>
+        </div>`;
+    }
+    if(meta.nextInvNumber || meta.nextPeriodStart){
+      html += `
+        <div class="item-card">
+          <div class="status-line" style="margin:0 0 6px;">Previous invoice was ${escapeHtml(meta.invNumberRaw || '—')} for ${escapeHtml(meta.periodStart||'')} to ${escapeHtml(meta.periodEnd||'')}. Next in sequence:</div>
+          <div class="row2">
+            <div><label>Next invoice #</label><input id="imp-next-number" value="${escapeHtml(meta.nextInvNumber || '')}"></div>
+            <div><label>Next invoice date</label><input type="date" id="imp-next-issue" value="${meta.nextInvDate || ''}"></div>
+          </div>
+          <div class="row2">
+            <div><label>Next due date</label><input type="date" id="imp-next-due" value="${meta.nextDueDate || ''}"></div>
+            <div></div>
+          </div>
+          <div class="row2">
+            <div><label>Next period — from</label><input type="date" id="imp-next-period-start" value="${meta.nextPeriodStart || ''}"></div>
+            <div><label>Next period — to</label><input type="date" id="imp-next-period-end" value="${meta.nextPeriodEnd || ''}"></div>
+          </div>
+        </div>`;
+    }
+    if(d.lineItems.length){
+      html += `<div class="status-line" style="margin:10px 0 6px;">Found ${d.lineItems.length} rate(s):</div>`;
+      html += d.lineItems.map((li, idx) => `
+        <div class="item-card" data-idx="${idx}">
+          <div class="row2">
+            <div><label>Employee name</label><input class="imp-emp-name" value="${escapeHtml(li.employeeName || '')}" placeholder="Couldn't detect — enter manually"></div>
+            <div><label>Rate/hr</label><input class="imp-emp-rate" type="number" step="0.01" value="${li.rate}"></div>
+          </div>
+        </div>`).join('');
+    }
+    if(!d.billTo && d.lineItems.length === 0 && !meta.nextInvNumber){
+      html = '<div class="status-line">Couldn\'t find a recognizable Bill To section or rate table in this PDF — it may not be from this tool, or the layout doesn\'t match.</div>';
+    } else {
+      html += `<button class="btn btn-primary btn-block" id="apply-imported-invoice-btn">Apply to this invoice</button>`;
+    }
+    c.innerHTML = html;
+
+    const applyBtn = $('apply-imported-invoice-btn');
+    if(applyBtn){
+      applyBtn.addEventListener('click', async () => {
+        let appliedClient = null;
+        if(d.billTo){
+          const name = $('imp-bill-name').value.trim();
+          const address = $('imp-bill-address').value.trim();
+          appliedClient = await resolveClientFromNameAddress(name, address);
+          selectClient(appliedClient);
+        }
+        const nextNumEl = $('imp-next-number');
+        if(nextNumEl){
+          if(nextNumEl.value.trim() && !$('inv-number-manual').checked) $('inv-number').value = nextNumEl.value.trim();
+          if($('imp-next-issue').value) $('inv-issue').value = $('imp-next-issue').value;
+          if($('imp-next-due').value) $('inv-due').value = $('imp-next-due').value;
+          if($('imp-next-period-start').value) $('inv-period-start').value = $('imp-next-period-start').value;
+          if($('imp-next-period-end').value) $('inv-period-end').value = $('imp-next-period-end').value;
+        }
+        if(appliedClient) await rememberPrefixClient($('inv-number').value, appliedClient.id);
+        renderPreview();
+        const empRows = c.querySelectorAll('.item-card[data-idx]');
+        for(const row of empRows){
+          const name = row.querySelector('.imp-emp-name').value.trim();
+          const rate = parseFloat(row.querySelector('.imp-emp-rate').value);
+          if(name && !isNaN(rate)) await addOrUpdateEmployee(name, rate);
+          if(name && meta.periodStart) await recordResourceCoverage(name, meta.periodStart);
+          if(name && appliedClient) await recordClientResource(appliedClient.id, name);
+        }
+        flashStatus('Applied client, invoice sequence, and employee rates from the imported invoice.');
+        importedInvoiceData = null;
+        renderInvoicePdfPreview();
+        $('invoice-pdf-input').value = '';
+      });
+    }
+  }
+  function extractHoursFromTableRows(rows){
+    const nameRe = /\b(name|employee|resource|consultant)\b/i;
+    const hoursRe = /\b(hours?|hrs)\b/i;
+    let headerRowIdx = -1, nameCol = -1, hoursCol = -1;
+    for(let r=0; r<Math.min(rows.length,15); r++){
+      const row = rows[r] || [];
+      let nc=-1, hc=-1;
+      row.forEach((cell,ci) => {
+        const s = String(cell||'').trim();
+        if(nc===-1 && nameRe.test(s)) nc=ci;
+        if(hc===-1 && hoursRe.test(s)) hc=ci;
+      });
+      if(nc!==-1 && hc!==-1){ headerRowIdx=r; nameCol=nc; hoursCol=hc; break; }
+    }
+    const results = [];
+    if(headerRowIdx === -1) return results;
+    for(let r=headerRowIdx+1; r<rows.length; r++){
+      const row = rows[r] || [];
+      const nameVal = row[nameCol], hoursVal = row[hoursCol];
+      if(nameVal === undefined || nameVal === '' || hoursVal === undefined || hoursVal === '') continue;
+      const hoursNum = parseFloat(String(hoursVal).replace(/[^\d.]/g, ''));
+      if(!isNaN(hoursNum) && String(nameVal).trim()) results.push({ name: String(nameVal).trim(), hours: hoursNum });
+    }
+    return results;
+  }
+
+  // Handles "calendar" timesheet templates: a "Resource Name:" label + value,
+  // followed by day-by-day billable-hours grids and/or pre-computed
+  // "Total Billable Hrs ..." summary cells, rather than a simple table.
+  function extractHoursFromCalendarSheet(rows){
+    const resourceRe = /resource\s*name\s*:?/i;
+    const totalBillableRe = /total.*billable|billable.*total/i;
+    const billableRowRe = /^billable$/i;
+
+    const sumNumericCells = (row) => {
+      let sum = 0;
+      row.forEach(cell => {
+        const s = String(cell === undefined || cell === null ? '' : cell).trim();
+        if(s && /^-?\d+(\.\d+)?$/.test(s)) sum += parseFloat(s);
+      });
+      return sum;
+    };
+
+    const blocks = [];
+    rows.forEach((row, r) => {
+      row.forEach((cell, c) => {
+        if(resourceRe.test(String(cell||'').trim())){
+          let name = '';
+          for(let cc=c+1; cc<row.length; cc++){
+            if(String(row[cc]||'').trim()){ name = String(row[cc]).trim(); break; }
+          }
+          if(name) blocks.push({ rowStart: r, name });
+        }
+      });
+    });
+
+    const results = [];
+    blocks.forEach((block, i) => {
+      const rowEnd = (i+1 < blocks.length) ? blocks[i+1].rowStart : rows.length;
+      let totalSum = 0, foundTotal = false;
+      let billableSum = 0, foundBillable = false;
+      for(let r=block.rowStart; r<rowEnd; r++){
+        const row = rows[r] || [];
+        const hasTotalLabel = row.some(cell => totalBillableRe.test(String(cell||'').trim()));
+        const hasBillableLabel = row.some(cell => billableRowRe.test(String(cell||'').trim()));
+        if(hasTotalLabel){ totalSum += sumNumericCells(row); foundTotal = true; }
+        else if(hasBillableLabel){ billableSum += sumNumericCells(row); foundBillable = true; }
+      }
+      const hours = foundTotal ? totalSum : (foundBillable ? billableSum : null);
+      if(hours !== null && hours > 0) results.push({ name: block.name, hours });
+    });
+    return results;
+  }
+
+  function extractHoursFromSheetRows(rows){
+    const tableResults = extractHoursFromTableRows(rows);
+    if(tableResults.length > 0) return tableResults;
+    return extractHoursFromCalendarSheet(rows);
+  }
+  async function extractRowsFromAttachment(att){
+    const ext = (att.filename.match(/\.([a-z0-9]+)$/i) || [,''])[1].toLowerCase();
+    if(ext === 'csv'){
+      return extractHoursFromSheetRows(parseCSVBytes(att.data));
+    }
+    if(ext === 'xlsx' || ext === 'xls'){
+      const sheets = await parseXLSXWorkbookSheets(att.data);
+      let all = [];
+      for(const s of sheets){
+        const found = extractHoursFromSheetRows(s.rows);
+        if(found.length === 0) continue;
+        all = all.concat(sheets.length > 1 ? found.map(r => ({ ...r, name: `${r.name} (${s.name})` })) : found);
+      }
+      return all;
+    }
+    return [];
+  }
+
+  function parseTimesheetText(text){
+    const lines = text.split(/\r?\n/);
+    const results = [];
+    const nameHourRegex = /^\s*([A-Za-z][A-Za-z.,'\- ]{1,60}?)\s*[:\-–]\s*(\d{1,4}(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/i;
+    const hourNameRegex = /(\d{1,4}(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b.*?(?:for|by|worked by)\s+([A-Za-z][A-Za-z.,'\- ]{1,60})/i;
+    const employeeLabelRegex = /(?:employee|name|resource|consultant)\s*[:\-]\s*([A-Za-z][A-Za-z.'\- ]{1,60})/i;
+    const totalHoursLabelRegex = /(?:total\s*hours|hours\s*worked|no\.?\s*of\s*days?\s*worked|days\s*worked)\s*[:\-]\s*(\d{1,4}(?:\.\d+)?)/i;
+    const bareHourRegex = /(\d{1,4}(?:\.\d+)?)\s*(?:hours?|hrs?|h)\b/i;
+
+    for(const line of lines){
+      const l = line.trim();
+      if(!l) continue;
+      let m = l.match(nameHourRegex);
+      if(m){ results.push({name: m[1].trim(), hours: parseFloat(m[2])}); continue; }
+      m = l.match(hourNameRegex);
+      if(m){ results.push({name: m[2].trim(), hours: parseFloat(m[1])}); continue; }
+    }
+
+    if(results.length === 0){
+      let currentName = null;
+      for(const line of lines){
+        const nameM = line.match(employeeLabelRegex);
+        if(nameM){ currentName = nameM[1].trim(); }
+        const hoursM = line.match(totalHoursLabelRegex) || line.match(bareHourRegex);
+        if(hoursM && currentName){
+          results.push({name: currentName, hours: parseFloat(hoursM[1])});
+          currentName = null;
+        }
+      }
+    }
+    return results;
+  }
+
+  function renderParsePreview(){
+    const c = $('parse-preview');
+    if(parsedRows.length === 0){
+      c.innerHTML = '<div class="status-line">Nothing recognizable found. Try a clearer format, e.g. "John Doe: 160 hours" on its own line.</div>';
+      return;
+    }
+    c.innerHTML = `<div class="status-line" style="margin:10px 0 6px;">Found ${parsedRows.length} entr${parsedRows.length===1?'y':'ies'} — review before adding:</div>` +
+      parsedRows.map((r, idx) => {
+        const rate = findEmployeeRate(r.name);
+        return `
+        <div class="item-card" data-idx="${idx}">
+          <button class="remove pp-discard" title="Discard">×</button>
+          <div class="row2">
+            <div><label>Name</label><input class="pp-name" value="${escapeHtml(r.name)}"></div>
+            <div><label>Hours</label><input class="pp-hours" type="number" step="0.25" value="${r.hours}"></div>
+          </div>
+          <div class="calc-line">${rate !== null ? `Matched saved rate: $${Number(rate).toFixed(2)}/hr` : 'No saved rate found for this name — add one above, or set it manually after adding.'}</div>
+        </div>`;
+      }).join('') +
+      `<button class="btn btn-primary btn-block" id="add-parsed-btn">Add all to invoice line items</button>`;
+
+    c.querySelectorAll('.item-card').forEach(card => {
+      const idx = parseInt(card.dataset.idx, 10);
+      card.querySelector('.pp-name').addEventListener('input', e => { parsedRows[idx].name = e.target.value; });
+      card.querySelector('.pp-hours').addEventListener('input', e => { parsedRows[idx].hours = parseFloat(e.target.value) || 0; });
+      card.querySelector('.pp-discard').addEventListener('click', () => { parsedRows.splice(idx,1); renderParsePreview(); });
+    });
+    $('add-parsed-btn').addEventListener('click', () => {
+      const parsedItems = parsedRows.map(r => {
+        const rate = findEmployeeRate(r.name);
+        return { id: newItemId(), desc: `Consulting services for ${r.name}`, rate: rate !== null ? rate : '', hours: r.hours };
+      });
+      // Drop blank placeholder rows (e.g. the default empty starter row) so
+      // parsed items lead the list; keep anything the user already filled in.
+      const existingNonEmpty = items.filter(i => (i.desc && i.desc.trim()) || i.rate !== '' || i.hours !== '');
+      items = [...parsedItems, ...existingNonEmpty];
+      if(items.length === 0) addItem();
+      let clientAutoSet = null;
+      parsedRows.forEach(r => {
+        if(tryAutoSelectClientFromResource(r.name)){
+          const c = clients.find(cl => cl.id === selectedClientId);
+          if(c) clientAutoSet = c.name;
+        }
+      });
+      parsedRows = [];
+      $('timesheet-input').value = '';
+      renderItems();
+      renderParsePreview();
+      renderPreview();
+      flashStatus(clientAutoSet ? `Added parsed hours and set client to ${clientAutoSet}.` : 'Added parsed hours to line items.');
+    });
+  }
+
+  function currentInvoiceData(){
+    const biz = {
+      name: $('biz-name').value || 'Your Business Name',
+      address: $('biz-address').value,
+      email: $('biz-email').value,
+      web: $('biz-web').value,
+      bank: $('biz-bank').value
+    };
+    const client = clients.find(c => c.id === selectedClientId);
+    const cur = $('inv-currency').value;
+    const invNumber = $('inv-number').value || '—';
+    const issue = $('inv-issue').value;
+    const due = $('inv-due').value;
+    const periodStart = $('inv-period-start').value;
+    const periodEnd = $('inv-period-end').value;
+    const notes = $('inv-notes').value;
+    const po = $('inv-po').value;
+    const terms = $('inv-terms').value;
+    const termsShow = $('terms-show').checked;
+    const bankShow = $('bank-show').checked;
+    const totalLabel = $('inv-total-label').value || 'BALANCE DUE';
+    const logoSize = $('logo-size').value;
+    const shipSame = $('ship-same').checked;
+    const shipAddress = $('ship-address').value;
+    const rows = items.filter(i => i.desc || i.hours || i.rate);
+    let subtotal = 0;
+    rows.forEach(i => { subtotal += (parseFloat(i.rate)||0) * (parseFloat(i.hours)||0); });
+    return { biz, client, cur, invNumber, issue, due, periodStart, periodEnd, notes, po, terms, termsShow, bankShow, totalLabel, logoSize, shipSame, shipAddress, rows, subtotal };
+  }
+
+  function silentlyAutoSelectClientFromItems(){
+    if(selectedClientId) return;
+    for(const item of items){
+      const m = (item.desc||'').match(/for\s+(.+)/i);
+      if(!m) continue;
+      const clientId = findClientIdForResource(m[1].trim());
+      if(clientId){
+        const client = clients.find(c => c.id === clientId);
+        if(client){ selectedClientId = client.id; renderClientOptions(); return; }
+      }
+    }
+  }
+
+  function renderPreview(){
+    silentlyAutoSelectClientFromItems();
+    const d = currentInvoiceData();
+    const rowsHtml = d.rows.map(i => {
+      const rate = parseFloat(i.rate) || 0;
+      const hrs = parseFloat(i.hours) || 0;
+      const amt = rate * hrs;
+      return `<tr>
+        <td>${escapeHtml(i.desc) || '—'}</td>
+        <td class="num">${fmtMoney(d.cur, rate)}</td>
+        <td class="num">${hrs || 0}</td>
+        <td class="num">${fmtMoney(d.cur, amt)}</td>
+      </tr>`;
+    }).join('');
+
+    const billName = d.client ? escapeHtml(d.client.name) : 'No client selected';
+    const billAddr = d.client ? escapeHtml(d.client.address || '') : '';
+    const shipAddr = d.shipSame ? billAddr : escapeHtml(d.shipAddress || '');
+
+    $('invoice-preview').innerHTML = `
+      <div class="inv-header">
+        <div>${bizLogoDataUrl
+            ? `<img class="inv-logo-img ${d.logoSize}" src="${bizLogoDataUrl}" alt="${escapeHtml(d.biz.name)}">`
+            : `<div class="inv-logo-name">${escapeHtml(d.biz.name)}</div>`}</div>
+        <div>
+          <div class="inv-title">Invoice</div>
+          <table class="meta-table">
+            <tr><td class="k">Invoice Date:</td><td class="v">${fmtDate(d.issue)}</td></tr>
+            <tr><td class="k">Invoice #:</td><td class="v">${escapeHtml(d.invNumber)}</td></tr>
+            <tr><td class="k">Payment Due Date</td><td class="v">${fmtDate(d.due)}</td></tr>
+            <tr><td class="k">Invoice Period</td><td class="v">${fmtDateShort(d.periodStart)} - ${fmtDateShort(d.periodEnd)}</td></tr>
+            ${d.po ? `<tr><td class="k">PO / Ref #</td><td class="v">${escapeHtml(d.po)}</td></tr>` : ''}
+            ${(d.terms && d.termsShow) ? `<tr><td class="k">Terms</td><td class="v">${escapeHtml(d.terms)}</td></tr>` : ''}
+          </table>
+        </div>
+      </div>
+
+      <div class="bill-ship">
+        <div>
+          <div class="bs-head">Bill To:</div>
+          <div class="bs-body"><div class="name">${billName}</div><div class="addr">${billAddr}</div></div>
+        </div>
+        <div>
+          <div class="bs-head">Ship To:</div>
+          <div class="bs-body"><div class="name">${billName}</div><div class="addr">${shipAddr}</div></div>
+        </div>
+      </div>
+
+      ${d.rows.length ? `
+      <table class="ledger">
+        <thead><tr><th>Description</th><th class="num">Rate / Hr</th><th class="num">Hours</th><th class="num">Amount</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+        <tfoot><tr><td colspan="3" class="label">${escapeHtml(d.totalLabel)}</td><td class="amt">${fmtMoney(d.cur, d.subtotal)}</td></tr></tfoot>
+      </table>` : `<div class="empty-state">Add hours and a rate to see the invoice total.</div>`}
+
+      <div class="pay-block">
+        ${d.notes ? `<div>${boldMarkup(d.notes)}</div>` : ''}
+        ${(d.biz.bank && d.bankShow) ? `<div style="margin-top:6px; white-space:pre-line;">${boldMarkup(d.biz.bank)}</div>` : ''}
+        <div class="thanks">Thank you for your business!</div>
+      </div>
+
+      ${d.biz.email ? `<div class="contact-line">Should you have any questions about this invoice, kindly contact <a href="mailto:${escapeHtml(d.biz.email)}" style="color:inherit; text-decoration:none;">${escapeHtml(d.biz.email)}</a></div>` : ''}
+
+      ${(d.biz.address || d.biz.email || d.biz.web) ? `
+      <div class="inv-footer">
+        ${d.biz.address ? escapeHtml(d.biz.address) + '<br>' : ''}
+        ${[
+          d.biz.email ? `Email: <a href="mailto:${escapeHtml(d.biz.email)}" style="color:inherit; text-decoration:none;">${escapeHtml(d.biz.email)}</a>` : '',
+          d.biz.web ? `Web: <a href="${escapeHtml(/^https?:\/\//i.test(d.biz.web) ? d.biz.web : 'https://' + d.biz.web)}" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;">${escapeHtml(d.biz.web)}</a>` : ''
+        ].filter(Boolean).join(' &nbsp; ')}
+      </div>` : ''}
+    `;
+  }
+
+  function summaryDescription(rows){
+    if(rows.length === 0) return '(no line items)';
+    const first = rows[0].desc || '(untitled line)';
+    return rows.length > 1 ? `${first} +${rows.length-1} more` : first;
+  }
+
+  function renderHistory(){
+    const list = $('hist-list');
+    if(invoicesHistory.length === 0){
+      list.innerHTML = '<div class="empty-hist">No invoices saved yet.</div>';
+      return;
+    }
+    const sorted = [...invoicesHistory].sort((a,b) => (b.savedAt||0) - (a.savedAt||0));
+    list.innerHTML = sorted.map(rec => `
+      <div class="hist-row" data-id="${rec.id}">
+        <div class="top"><span>${escapeHtml(rec.invNumber)}</span><span class="amt">${escapeHtml(rec.cur)}${Number(rec.subtotal).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div>
+        <div class="desc">${escapeHtml(rec.clientName || 'No client')} — ${escapeHtml(rec.description)}</div>
+        <div class="bottom">
+          <span style="color:var(--ink-soft);">${escapeHtml(rec.issue || '')}</span>
+          <div class="hist-actions">
+            <button class="btn btn-sm load-btn">Load</button>
+            <button class="btn btn-sm del-btn" style="color:#B3453D;">Delete</button>
+          </div>
+        </div>
+      </div>`).join('');
+
+    list.querySelectorAll('.hist-row').forEach(row => {
+      const id = row.dataset.id;
+      row.querySelector('.load-btn').addEventListener('click', () => loadRecord(id));
+      row.querySelector('.del-btn').addEventListener('click', () => deleteRecord(id));
+    });
+  }
+
+  async function saveCurrentAsRecord(){
+    const d = currentInvoiceData();
+    const rec = {
+      id: 'inv' + Date.now(),
+      savedAt: Date.now(),
+      invNumber: d.invNumber,
+      clientId: d.client ? d.client.id : null,
+      clientName: d.client ? d.client.name : '',
+      issue: d.issue,
+      due: d.due,
+      periodStart: d.periodStart,
+      periodEnd: d.periodEnd,
+      po: d.po,
+      terms: d.terms,
+      termsShow: d.termsShow,
+      bankShow: d.bankShow,
+      totalLabel: d.totalLabel,
+      cur: d.cur,
+      notes: d.notes,
+      items: d.rows,
+      subtotal: d.subtotal,
+      description: summaryDescription(d.rows)
+    };
+    invoicesHistory.push(rec);
+    await storageSet('invoices', invoicesHistory);
+    renderHistory();
+
+    for(const item of d.rows){
+      const m = (item.desc || '').match(/for\s+(.+)/i);
+      if(m){
+        const name = m[1].trim();
+        await recordResourceCoverage(name, d.periodStart);
+        if(d.client) await recordClientResource(d.client.id, name);
+      }
+    }
+
+    flashStatus('Saved to invoice history.');
+  }
+
+  function loadRecord(id){
+    const rec = invoicesHistory.find(r => r.id === id);
+    if(!rec) return;
+    $('inv-number').value = rec.invNumber;
+    selectedClientId = rec.clientId;
+    renderClientOptions();
+    $('inv-issue').value = rec.issue;
+    $('inv-due').value = rec.due;
+    $('inv-period-start').value = rec.periodStart;
+    $('inv-period-end').value = rec.periodEnd;
+    $('inv-po').value = rec.po || '';
+    $('inv-terms').value = rec.terms || '';
+    $('terms-show').checked = rec.termsShow !== false;
+    $('bank-show').checked = rec.bankShow !== false;
+    $('inv-total-label').value = rec.totalLabel || 'BALANCE DUE';
+    $('inv-currency').value = rec.cur;
+    $('inv-notes').value = rec.notes;
+    items = rec.items.map(i => ({...i, id: newItemId()}));
+    if(items.length === 0) addItem();
+    renderItems();
+    renderPreview();
+    flashStatus('Loaded ' + rec.invNumber + '.');
+  }
+
+  async function deleteRecord(id){
+    invoicesHistory = invoicesHistory.filter(r => r.id !== id);
+    await storageSet('invoices', invoicesHistory);
+    renderHistory();
+  }
+
+  function buildInvoiceFilename(d){
+    const monthYear = d.periodStart
+      ? new Date(d.periodStart + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : '';
+    let resourceName = '';
+    const firstNamed = d.rows.find(r => (r.desc||'').match(/for\s+(.+)/i));
+    if(firstNamed){
+      const m = firstNamed.desc.match(/for\s+(.+)/i);
+      if(m) resourceName = m[1].trim();
+    }
+    const bizShort = (d.biz.name || 'YourCompany').replace(/\s+/g, '');
+    return ['Invoice', d.invNumber, monthYear, bizShort, resourceName].filter(Boolean).join('_');
+  }
+  let html2pdfLoadPromise = null;
+  function ensureHtml2PdfLoaded(){
+    if(window.html2pdf) return Promise.resolve();
+    if(html2pdfLoadPromise) return html2pdfLoadPromise;
+    html2pdfLoadPromise = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload = () => resolve();
+      s.onerror = () => reject(new Error('Could not load the PDF-generation library — check your internet connection.'));
+      document.head.appendChild(s);
+    });
+    return html2pdfLoadPromise;
+  }
+  async function downloadInvoicePdf(d){
+    await ensureHtml2PdfLoaded();
+    const filename = buildInvoiceFilename(d) + '.pdf';
+    const element = document.getElementById('invoice-preview');
+    const opt = {
+      margin: 0.3,
+      filename: filename,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+    };
+    await window.html2pdf().set(opt).from(element).save();
+  }
+
+  function buildEmailHtmlBody(d){
+    const monthYear = d.periodStart
+      ? new Date(d.periodStart + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : '';
+    const contactEmail = escapeHtml(d.biz.email || '');
+    const logoImg = bizLogoDataUrl
+      ? `<img src="${bizLogoDataUrl}" alt="${escapeHtml(d.biz.name)}" style="max-height:50px; max-width:180px; margin-top:8px; display:block;">`
+      : '';
+    const font = "font-family: Aptos, Calibri, Arial, sans-serif; font-size:14px; color:#1F2430; line-height:1.5;";
+    return `<div style="${font}">
+<p>Dear ${escapeHtml(d.client.name)} Accounts Team,</p>
+<p>Hope you are doing well !</p>
+<p>Please see attached invoice no ${escapeHtml(d.invNumber)} for the consulting services provided by our consultant for the month of ${monthYear}.</p>
+<p>Please remit payment at your earliest convenience. Remittance details are included on the invoice.</p>
+<p>Please remit by due date to avoid any late penalties or escalations to the client.</p>
+<p>Don&rsquo;t hesitate to reach out to us at <b>${contactEmail}</b> if you have any questions on this invoice.</p>
+<p>Please acknowledge receipt of this email.</p>
+<p>We appreciate your business, Thank you !</p>
+<p>
+Regards<br>
+Accounts Team<br>
+${escapeHtml(d.biz.name)}<br>
+______________________________________<br>
+Email Id: <b>${contactEmail}</b><br>
+${logoImg}
+</p>
+</div>`;
+  }
+
+  async function copyHtmlToClipboard(html){
+    const plain = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n\n').replace(/<[^>]+>/g, '').replace(/&rsquo;/g, '\u2019').trim();
+    if(navigator.clipboard && window.ClipboardItem){
+      try{
+        const item = new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([plain], { type: 'text/plain' })
+        });
+        await navigator.clipboard.write([item]);
+        return true;
+      } catch(e){ /* fall through to legacy approach */ }
+    }
+    // Legacy fallback for browsers without Clipboard API rich-copy support
+    const container = document.createElement('div');
+    container.contentEditable = 'true';
+    container.innerHTML = html;
+    container.style.position = 'fixed';
+    container.style.left = '-9999px';
+    document.body.appendChild(container);
+    const range = document.createRange();
+    range.selectNodeContents(container);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+    let ok = false;
+    try{ ok = document.execCommand('copy'); } catch(e){ ok = false; }
+    sel.removeAllRanges();
+    document.body.removeChild(container);
+    return ok;
+  }
+
+  function bindEvents(){
+    $('start-guided-btn').addEventListener('click', startGuidedFlow);
+
+    $('guided-new-client-toggle').addEventListener('click', () => {
+      $('guided-new-client-form').classList.toggle('hidden');
+      if(!$('guided-new-client-form').classList.contains('hidden')) $('guided-nc-name').focus();
+    });
+    $('guided-nc-save').addEventListener('click', async () => {
+      const name = $('guided-nc-name').value.trim();
+      if(!name){ $('guided-nc-name').focus(); return; }
+      const client = await resolveClientFromNameAddress(name, $('guided-nc-address').value.trim());
+      client.email = $('guided-nc-email').value.trim();
+      await storageSet('clients', clients);
+      selectClient(client);
+      $('guided-nc-name').value = ''; $('guided-nc-address').value = ''; $('guided-nc-email').value = '';
+      $('guided-new-client-form').classList.add('hidden');
+      goToGuidedName();
+    });
+
+    $('guided-name-next').addEventListener('click', () => {
+      const val = $('guided-name-input').value.trim();
+      if(!val){ $('guided-name-input').focus(); return; }
+      guidedState.name = val;
+      goToGuidedMonth();
+    });
+    $('guided-name-input').addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') $('guided-name-next').click();
+    });
+
+    $('guided-month-next').addEventListener('click', () => {
+      const val = $('guided-month-input').value;
+      if(!val){ $('guided-month-input').focus(); return; }
+      guidedState.month = val;
+      goToGuidedHours();
+    });
+
+    $('guided-hours-next').addEventListener('click', () => {
+      const val = parseFloat($('guided-hours-input').value);
+      if(isNaN(val) || val <= 0){ $('guided-hours-input').focus(); return; }
+      guidedState.hours = val;
+      showGuidedConfirm();
+    });
+    $('guided-hours-input').addEventListener('keydown', (e) => {
+      if(e.key === 'Enter') $('guided-hours-next').click();
+    });
+
+    $('guided-confirm-btn').addEventListener('click', applyGuidedResult);
+
+    $('save-biz').addEventListener('click', async () => {
+      const biz = {
+        name: $('biz-name').value, address: $('biz-address').value,
+        email: $('biz-email').value, web: $('biz-web').value, bank: $('biz-bank').value
+      };
+      await storageSet('business-profile', biz);
+      flashStatus('Business info saved.');
+      renderPreview();
+    });
+
+    $('biz-logo-upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        bizLogoDataUrl = reader.result;
+        await storageSet('business-logo', bizLogoDataUrl);
+        updateLogoPreviewUI();
+        renderPreview();
+        flashStatus('Logo updated.');
+      };
+      reader.readAsDataURL(file);
+    });
+
+    $('remove-logo').addEventListener('click', async () => {
+      bizLogoDataUrl = null;
+      await storageSet('business-logo', null);
+      updateLogoPreviewUI();
+      renderPreview();
+      $('biz-logo-upload').value = '';
+      flashStatus('Logo removed — business name will show instead.');
+    });
+
+    $('new-client-toggle').addEventListener('click', () => $('new-client-form').classList.toggle('hidden'));
+
+    $('nc-save').addEventListener('click', async () => {
+      const name = $('nc-name').value.trim();
+      if(!name){ $('nc-name').focus(); return; }
+      const client = { id: 'c'+Date.now(), name, address: $('nc-address').value.trim(), email: $('nc-email').value.trim(), cc: $('nc-cc').value.trim() };
+      clients.push(client);
+      await storageSet('clients', clients);
+      selectedClientId = client.id;
+      renderClientOptions();
+      $('nc-name').value=''; $('nc-address').value=''; $('nc-email').value=''; $('nc-cc').value='';
+      $('new-client-form').classList.add('hidden');
+      flashStatus('Client saved.');
+      renderPreview();
+    });
+
+    $('client-select').addEventListener('change', e => { selectedClientId = e.target.value || null; renderPreview(); });
+
+    $('edit-client-btn').addEventListener('click', async () => {
+      const client = clients.find(c => c.id === selectedClientId);
+      if(!client){ alert('Select a client first.'); return; }
+      const name = prompt('Client name', client.name);
+      if(name === null) return;
+      const address = prompt('Bill To address', client.address || '');
+      const email = prompt('Client email', client.email || '');
+      const cc = prompt('CC email(s) for this client (optional, comma-separated)', client.cc || '');
+      client.name = name.trim() || client.name;
+      client.address = (address||'').trim();
+      client.email = (email||'').trim();
+      client.cc = (cc||'').trim();
+      await storageSet('clients', clients);
+      renderClientOptions();
+      renderPreview();
+      flashStatus('Client updated.');
+      return;
+    });
+
+    $('delete-client-btn').addEventListener('click', async () => {
+      const client = clients.find(c => c.id === selectedClientId);
+      if(!client){ alert('Select a client first.'); return; }
+      if(!confirm(`Delete "${client.name}"? This can't be undone. (Past invoices already in history won't be affected.)`)) return;
+      clients = clients.filter(c => c.id !== client.id);
+      await storageSet('clients', clients);
+      if(selectedClientId === client.id) selectedClientId = null;
+      renderClientOptions();
+      renderPreview();
+      flashStatus(`Deleted "${client.name}".`);
+    });
+
+    $('ship-same').addEventListener('change', e => {
+      $('ship-to-form').classList.toggle('hidden', e.target.checked);
+      renderPreview();
+    });
+    $('ship-address').addEventListener('input', renderPreview);
+
+    $('tracker-filter-employee').addEventListener('change', renderResourceTracker);
+    $('tracker-filter-month').addEventListener('change', renderResourceTracker);
+    $('pending-check-month').addEventListener('change', renderPendingList);
+
+    $('manual-cover-btn').addEventListener('click', async () => {
+      const name = $('manual-cover-name').value.trim();
+      const month = $('manual-cover-month').value; // "YYYY-MM"
+      if(!name){ $('manual-cover-name').focus(); return; }
+      if(!month){ $('manual-cover-month').focus(); return; }
+      await recordResourceCoverage(name, `${month}-01`);
+      $('manual-cover-name').value = '';
+      $('manual-cover-month').value = '';
+      flashStatus(`Marked ${name} as covered for ${monthLabel(month)}.`);
+    });
+
+    $('add-item').addEventListener('click', addItem);
+
+    $('invoice-pdf-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const statusEl = $('invoice-pdf-status');
+      statusEl.textContent = `Reading "${file.name}"…`;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try{
+          const rows = await extractInvoiceRowsFromPDF(reader.result);
+          importedInvoiceData = parseInvoicePdfRows(rows);
+          renderInvoicePdfPreview();
+          statusEl.textContent = `Loaded "${file.name}".`;
+
+          if(importedInvoiceData.billTo){
+            const client = await resolveClientFromNameAddress(importedInvoiceData.billTo.name, importedInvoiceData.billTo.address);
+            if(client){
+              selectClient(client);
+              await rememberPrefixClient(importedInvoiceData.meta.invNumberRaw, client.id);
+              statusEl.textContent = `Loaded "${file.name}" — client set to ${client.name}.`;
+            }
+          }
+        } catch(err){
+          statusEl.textContent = `Couldn't read this PDF (${err.message}).`;
+        }
+      };
+      reader.onerror = () => { statusEl.textContent = 'Could not read this file.'; };
+      reader.readAsArrayBuffer(file);
+    });
+
+    $('emp-add-btn').addEventListener('click', async () => {
+      const name = $('emp-name-input').value;
+      const rate = parseFloat($('emp-rate-input').value);
+      if(!name.trim()){ $('emp-name-input').focus(); return; }
+      if(isNaN(rate)){ $('emp-rate-input').focus(); return; }
+      await addOrUpdateEmployee(name, rate);
+      $('emp-name-input').value = '';
+      $('emp-rate-input').value = '';
+      flashStatus('Rate saved.');
+    });
+
+    $('parse-timesheet-btn').addEventListener('click', () => {
+      const text = $('timesheet-input').value;
+      parsedRows = parseTimesheetText(text);
+      renderParsePreview();
+    });
+
+    $('email-file-input').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if(!file) return;
+      const statusEl = $('email-file-status');
+      const isEml = /\.eml$/i.test(file.name) || file.type === 'message/rfc822';
+      const isMsg = /\.msg$/i.test(file.name);
+
+      const finish = async (bodyText, attachments) => {
+        $('timesheet-input').value = (bodyText || '').trim();
+        let rows = parseTimesheetText(bodyText || '');
+        const summary = [];
+        if(rows.length) summary.push(`email body (${rows.length} found)`);
+
+        if(attachments.length === 0){
+          summary.push('no attachments found in this file');
+        } else {
+          summary.push(`${attachments.length} attachment(s) found: ${attachments.map(a=>a.filename).join(', ')}`);
+        }
+
+        const sheetAttachments = attachments.filter(a => /\.(xlsx|xls|csv)$/i.test(a.filename));
+        for(const att of sheetAttachments){
+          statusEl.textContent = `Reading attachment "${att.filename}"…`;
+          try{
+            const attRows = await extractRowsFromAttachment(att);
+            rows = rows.concat(attRows);
+            summary.push(`${att.filename}: ${attRows.length} row(s) recognized`);
+          } catch(err){
+            summary.push(`${att.filename}: couldn't read (${err.message})`);
+          }
+        }
+
+        parsedRows = rows;
+        renderParsePreview();
+        statusEl.innerHTML = `Loaded "${escapeHtml(file.name)}".<br>` + summary.map(s=>escapeHtml(s)).join('<br>');
+      };
+
+      if(isMsg){
+        const reader = new FileReader();
+        reader.onload = () => {
+          try{
+            const { body, attachments } = parseMsgFile(reader.result);
+            finish(body, attachments);
+          } catch(err){
+            statusEl.textContent = `Couldn't parse this .msg file (${err.message}). Try converting it to .eml/.txt, or paste the text directly.`;
+          }
+        };
+        reader.onerror = () => { statusEl.textContent = 'Could not read this file.'; };
+        reader.readAsArrayBuffer(file);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const raw = reader.result;
+        if(isEml){
+          try{
+            const bodyText = parseEmlToPlainText(raw);
+            const attachments = extractEmlAttachments(raw);
+            finish(bodyText, attachments);
+          } catch(err){
+            statusEl.textContent = 'Could not parse this .eml file — try pasting the text manually.';
+          }
+        } else {
+          finish(raw, []);
+        }
+      };
+      reader.onerror = () => { statusEl.textContent = 'Could not read this file.'; };
+      reader.readAsText(file);
+    });
+
+    $('inv-month-picker').addEventListener('change', () => {
+      const val = $('inv-month-picker').value; // "YYYY-MM"
+      if(!val) return;
+      const [yyyy, mm] = val.split('-');
+      const start = `${yyyy}-${mm}-01`;
+      const lastDay = new Date(parseInt(yyyy,10), parseInt(mm,10), 0).getDate();
+      const end = `${yyyy}-${mm}-${String(lastDay).padStart(2,'0')}`;
+      $('inv-period-start').value = start;
+      $('inv-period-end').value = end;
+
+      const yearYY = yyyy.slice(2);
+      const hint = $('inv-month-hint');
+      if($('inv-number-manual').checked){
+        hint.textContent = `Period set to ${val}. Invoice # kept as-is (manual override on).`;
+      } else {
+        const updatedNumber = tryUpdateInvoiceNumberForMonth($('inv-number').value, yearYY, mm);
+        if(updatedNumber){
+          $('inv-number').value = updatedNumber;
+          hint.textContent = `Period and invoice # updated to match ${val}.`;
+        } else {
+          hint.textContent = `Period set to ${val}. Invoice # left as-is (doesn't look like a YYMM-style number).`;
+        }
+      }
+      if(!selectedClientId) tryAutoSelectClientFromPrefix($('inv-number').value);
+      renderPreview();
+    });
+
+    $('inv-terms').addEventListener('input', () => { recalcDueFromTerms(); renderPreview(); });
+    $('inv-issue').addEventListener('input', () => { recalcDueFromTerms(); renderPreview(); });
+    $('terms-show').addEventListener('change', renderPreview);
+    $('bank-show').addEventListener('change', renderPreview);
+
+    ['inv-number','inv-currency','inv-issue','inv-due','inv-period-start','inv-period-end','inv-po','inv-terms','inv-total-label','inv-notes','logo-size'].forEach(id => {
+      $(id).addEventListener('input', renderPreview);
+      $(id).addEventListener('change', renderPreview);
+    });
+
+    $('inv-number').addEventListener('blur', () => {
+      if(!selectedClientId) tryAutoSelectClientFromPrefix($('inv-number').value);
+    });
+
+    $('save-record-btn').addEventListener('click', saveCurrentAsRecord);
+
+    $('copy-formatted-email-btn').addEventListener('click', async () => {
+      const d = currentInvoiceData();
+      if(!d.client){ alert('Select a client first so I know who to email.'); return; }
+      const html = buildEmailHtmlBody(d);
+      const ok = await copyHtmlToClipboard(html);
+      if(ok){
+        flashStatus('Formatted email copied — paste it into a new email in your mail client (Ctrl/Cmd+V).');
+      } else {
+        alert('Could not copy automatically in this browser. Try Chrome or Edge, or use the plain "Email invoice" button instead.');
+      }
+    });
+
+    $('email-btn').addEventListener('click', async () => {
+      const d = currentInvoiceData();
+      if(!d.client){ alert('Select a client first so I know who to email.'); return; }
+      if(!d.client.email){ alert('This client has no email saved yet. Click "Edit" next to the client dropdown to add one.'); return; }
+
+      const monthYear = d.periodStart
+        ? new Date(d.periodStart + 'T00:00:00').toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+        : '';
+      const contactEmail = d.biz.email || '';
+
+      const subject = `Invoice ${d.invNumber} - Consulting Services for ${monthYear}`;
+      const lines = [
+        `Dear ${d.client.name} Accounts Team,`,
+        '',
+        'Hope you are doing well !',
+        '',
+        `Please see attached invoice no ${d.invNumber} for the consulting services provided by our consultant for the month of ${monthYear}.`,
+        '',
+        'Please remit payment at your earliest convenience. Remittance details are included on the invoice.',
+        '',
+        'Please remit by due date to avoid any late penalties or escalations to the client.',
+        '',
+        `Don’t hesitate to reach out to us at ${contactEmail} if you have any questions on this invoice.`,
+        '',
+        'Please acknowledge receipt of this email.',
+        '',
+        'We appreciate your business, Thank you !'
+      ];
+      const body = lines.join('\n');
+      let mailtoUrl = `mailto:${encodeURIComponent(d.client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      if(d.client.cc && d.client.cc.trim()) mailtoUrl += `&cc=${encodeURIComponent(d.client.cc.trim())}`;
+
+      alert('Generating your PDF now — once it downloads, your email will open automatically. Just attach the downloaded PDF from your Downloads folder.');
+      const m = ($('inv-number').value || '').match(/(\d+)$/);
+      if(m){ await storageSet('invoice-counter', {n: parseInt(m[1],10)}); }
+      await saveCurrentAsRecord();
+      await downloadInvoicePdf(d);
+      window.location.href = mailtoUrl;
+    });
+
+    $('print-btn').addEventListener('click', async () => {
+      const d = currentInvoiceData();
+      const m = ($('inv-number').value || '').match(/(\d+)$/);
+      if(m){ await storageSet('invoice-counter', {n: parseInt(m[1],10)}); }
+      await saveCurrentAsRecord();
+      await downloadInvoicePdf(d);
+    });
+
+    $('clear-history').addEventListener('click', async (e) => {
+      e.preventDefault();
+      if(!confirm('Delete all saved invoice history? This cannot be undone.')) return;
+      invoicesHistory = [];
+      await storageSet('invoices', invoicesHistory);
+      renderHistory();
+    });
+  }
+
+  let statusTimer;
+  function flashStatus(msg){
+    const el = $('save-status');
+    el.textContent = msg;
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => { el.textContent=''; }, 2500);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
