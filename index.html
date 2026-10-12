@@ -2213,10 +2213,18 @@
       margin: 0.3,
       filename: filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      // scrollX/scrollY: 0 — the capture library draws from the wrong offset when the
+      // page is scrolled (which it always is when you click the button), giving a blank PDF.
+      html2canvas: { scale: 2, useCORS: true, scrollX: 0, scrollY: 0, backgroundColor: '#ffffff' },
       jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
     };
-    await window.html2pdf().set(opt).from(element).save();
+    const prevX = window.scrollX, prevY = window.scrollY;
+    window.scrollTo(0, 0);
+    try{
+      await window.html2pdf().set(opt).from(element).save();
+    } finally {
+      window.scrollTo(prevX, prevY);
+    }
   }
 
   function buildEmailHtmlBody(d){
